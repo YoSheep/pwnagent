@@ -1,21 +1,16 @@
 """
 Planner + Replanner — 动态任务规划
-参考架构图中 Planner → Supervisor → Replanner 的循环，但用单 LLM 调用实现。
-
-职责：
-1. 阶段开始前：根据 RAG 知识 + 上一阶段结果 → 生成当前阶段的执行计划
-2. 阶段执行中：工具失败/信息不足时 → 动态调整计划
-3. 决策时提供：该并行调用哪些工具、该跳过什么、该深入什么
 """
 from __future__ import annotations
 
 import json
 from typing import Any
 
-import anthropic
 from rich.console import Console
 from rich.panel import Panel
 from rich.tree import Tree
+
+from core.llm import complete_text, get_runtime
 
 console = Console()
 
@@ -67,18 +62,15 @@ class PhasePlan:
         self.risk_notes: list[str] = raw.get("risk_notes", [])
 
     def get_parallel_tool_calls(self, group_index: int = 0) -> list[dict]:
-        """获取指定并行组的工具调用列表。"""
         if group_index >= len(self.parallel_groups):
             return []
         group = self.parallel_groups[group_index]
         return group.get("tools", [])
 
     def get_sequential_tool_calls(self) -> list[list[dict]]:
-        """获取顺序执行步骤的工具调用。"""
         return [step.get("tools", []) for step in self.sequential_steps]
 
     def display(self):
-        """Rich 渲染执行计划。"""
         tree = Tree(f"[bold blue]{self.phase_goal}[/bold blue]")
 
         for i, group in enumerate(self.parallel_groups):
@@ -87,9 +79,7 @@ class PhasePlan:
                 priority_color = {"high": "red", "medium": "yellow", "low": "green"}.get(
                     tool.get("priority", "medium"), "white"
                 )
-                branch.add(
-                    f"[{priority_color}]{tool['name']}[/] — {tool.get('reason', '')}"
-                )
+                branch.add(f"[{priority_color}]{tool['name']}[/] — {tool.get('reason', '')}")
 
         for i, step in enumerate(self.sequential_steps):
             branch = tree.add(f"[magenta]顺序步骤 {i + 1}[/magenta]: {step.get('description', '')}")
@@ -110,10 +100,10 @@ class PhasePlan:
 
 
 class Planner:
-    def __init__(self, model: str = "claude-sonnet-4-20250514"):
-        """规划器用较小的模型即可，节省成本。"""
-        self.client = anthropic.Anthropic()
-        self.model = model
+    def __init__(self, model: str | None = None, provider_name: str | None = None):
+        runtime = get_runtime("planner", provider_name)
+        self.provider_name = provider_name
+        self.model = model or runtime.model
 
     def plan(
         self,
@@ -124,15 +114,6 @@ class Planner:
         previous_results: dict[str, Any] | None = None,
         rag_context: str = "",
     ) -> PhasePlan:
-        """
-        为当前阶段生成执行计划。
-        :param phase:            阶段名称
-        :param target:           目标
-        :param scope:            授权范围
-        :param available_tools:  可用工具定义列表
-        :param previous_results: 上一阶段的关键发现
-        :param rag_context:      RAG 检索到的知识
-        """
         tool_summary = "\n".join(
             f"- {t['name']}: {t.get('description', '')}"
             for t in available_tools
@@ -146,7 +127,10 @@ class Planner:
         )
 
         if previous_results:
-            prompt += f"\n上一阶段发现:\n{json.dumps(previous_results, ensure_ascii=False, indent=2, default=str)[:2000]}\n"
+            prompt += (
+                "\n上一阶段发现:\n"
+                f"{json.dumps(previous_results, ensure_ascii=False, indent=2, default=str)[:2000]}\n"
+            )
 
         if rag_context:
             prompt += f"\n参考知识:\n{rag_context[:1000]}\n"
@@ -163,11 +147,6 @@ class Planner:
         partial_results: list[dict],
         rag_context: str = "",
     ) -> PhasePlan:
-        """
-        当执行遇到问题时，生成调整后的计划。
-        :param failures:       失败的工具调用 [{tool, error}, ...]
-        :param partial_results: 已获得的部分结果
-        """
         prompt = (
             f"当前阶段: {phase}\n\n"
             f"原始计划目标: {original_plan.phase_goal}\n\n"
@@ -184,16 +163,16 @@ class Planner:
 
     def _call_llm(self, prompt: str, system: str) -> PhasePlan:
         try:
-            resp = self.client.messages.create(
-                model=self.model,
-                max_tokens=2048,
+            raw = complete_text(
+                role="planner",
+                provider_name=self.provider_name,
                 system=system,
-                messages=[{"role": "user", "content": prompt}],
+                prompt=prompt,
+                max_tokens=2048,
             )
-            raw = resp.content[0].text
 
             import re
-            match = re.search(r'\{[\s\S]*\}', raw)
+            match = re.search(r"\{[\s\S]*\}", raw)
             if match:
                 data = json.loads(match.group())
                 return PhasePlan(data)

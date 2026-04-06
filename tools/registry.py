@@ -24,7 +24,7 @@ class ToolRegistry:
       - 内置工具自动发现（tools/ 目录）
       - 运行时动态注册自定义工具
       - 从外部 .py 文件加载插件
-      - 自动生成 Anthropic tool_use 格式定义
+      - 自动生成通用工具定义（可供 Anthropic / OpenAI-compatible tool calling 使用）
     """
 
     def __init__(self):
