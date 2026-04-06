@@ -1,5 +1,5 @@
 """
-PwnAgent — CLI 入口
+PentestPilot — CLI 入口
 架构图中的 Input Router：区分扫描任务 / 知识查询 / 工具管理
 """
 from __future__ import annotations
@@ -34,7 +34,7 @@ def _print_banner():
     console.print(Panel(
         "[bold red]警告：本工具仅限经书面授权的渗透测试使用。\n"
         "对未授权目标使用本工具违反法律，使用者需自行承担全部法律责任。[/bold red]",
-        title="[bold white]PwnAgent v2.0 — AI 驱动渗透测试框架[/bold white]",
+        title="[bold white]PentestPilot v2.0 — AI 驱动渗透测试框架[/bold white]",
         border_style="red",
     ))
 
@@ -90,7 +90,7 @@ def _run_agent(
     interactive: bool, verbose: bool, use_planner: bool,
     plugins: str | None,
 ):
-    from core.agent import PwnAgent
+    from core.agent import PentestPilot
     from core.llm import LLMConfigurationError
     from modules.reporter import generate_report
 
@@ -102,7 +102,7 @@ def _run_agent(
 
     registry.register(
         "generate_report",
-        lambda title="渗透测试报告", tester="PwnAgent", **kw: generate_report(
+        lambda title="渗透测试报告", tester="PentestPilot", **kw: generate_report(
             session=session, output_dir=output_dir, title=title, tester=tester,
         ),
         description="生成渗透测试报告（Markdown + HTML）。",
@@ -130,7 +130,7 @@ def _run_agent(
         pass
 
     try:
-        agent = PwnAgent(
+        agent = PentestPilot(
             session=session,
             tools=registry.get_tools(),
             tool_defs=registry.get_tool_defs(),
@@ -153,7 +153,7 @@ def _run_agent(
 def ask(
     question: str = typer.Argument(..., help="安全相关问题"),
 ):
-    """向 PwnAgent 知识库提问（不执行扫描）。"""
+    """向 PentestPilot 知识库提问（不执行扫描）。"""
     from core.llm import LLMConfigurationError
     from knowledge.retriever import retrieve_context
     from core.llm import stream_text
@@ -161,7 +161,7 @@ def ask(
     rag_context = retrieve_context(question, n_results=5)
 
     system = (
-        "你是 PwnAgent 知识助手，擅长网络安全、渗透测试、漏洞分析。\n"
+        "你是 PentestPilot 知识助手，擅长网络安全、渗透测试、漏洞分析。\n"
         "根据知识库内容和你的专业知识回答用户问题。\n"
         "如果知识库无相关内容，用你自己的知识回答，但标注'以下来自通用知识'。"
     )

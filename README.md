@@ -27,9 +27,9 @@
 
 > **WARNING: This tool is strictly for authorized penetration testing only. Using this tool against targets without explicit written authorization is illegal. Users bear full legal responsibility for any misuse.**
 
-## What is PwnAgent?
+## What is PentestPilot?
 
-PwnAgent is an AI-driven penetration testing framework with multi-provider LLM support. It uses a **ReAct (Reason + Act)** agent architecture to autonomously execute the full pentest lifecycle — from reconnaissance to exploitation to reporting. It currently supports Anthropic, MiniMax via Anthropic-compatible API, and reserves configuration for multiple OpenAI-compatible vendors.
+PentestPilot is an AI-driven penetration testing framework with multi-provider LLM support. It uses a **ReAct (Reason + Act)** agent architecture to autonomously execute the full pentest lifecycle — from reconnaissance to exploitation to reporting. It currently supports Anthropic, MiniMax via Anthropic-compatible API, and reserves configuration for multiple OpenAI-compatible vendors including OpenAI, Gemini, Groq, xAI, Together, Fireworks, Mistral, DeepSeek, and OpenRouter-style gateways.
 
 ## Key Features
 
@@ -83,7 +83,7 @@ PwnAgent is an AI-driven penetration testing framework with multi-provider LLM s
 ## Project Structure
 
 ```
-penagent/
+pentestpilot/
 ├── main.py                 # CLI entry point (Input Router)
 ├── mcp_server.py           # MCP Server (Claude Code integration)
 ├── config.yaml             # Global configuration
@@ -149,11 +149,19 @@ pip install anthropic openai python-dotenv rich typer httpx jinja2 pyyaml chroma
 export ANTHROPIC_API_KEY="sk-ant-..."
 export MINIMAX_API_KEY="your-minimax-key"
 export OPENAI_API_KEY="your-openai-key"
+export GEMINI_API_KEY="your-gemini-key"
+export GROQ_API_KEY="your-groq-key"
+export XAI_API_KEY="your-xai-key"
+export TOGETHER_API_KEY="your-together-key"
+export FIREWORKS_API_KEY="your-fireworks-key"
+export MISTRAL_API_KEY="your-mistral-key"
 
 # Then switch llm.provider in config.yaml, for example:
 # llm:
 #   provider: "minimax"
 ```
+
+`config.yaml` also keeps reserved API key slots for `deepseek`, `openrouter`, `moonshot`, `dashscope`, `zhipu`, and `siliconflow`.
 
 ### 3. Run a Scan
 
@@ -204,7 +212,7 @@ python3 main.py ingest ./cve-2024-report.json
 
 ## MCP Server (Claude Code Integration)
 
-PwnAgent provides an MCP Server that exposes all security testing tools directly to Claude Code.
+PentestPilot provides an MCP Server that exposes all security testing tools directly to Claude Code.
 
 ### Configuration
 
@@ -213,9 +221,9 @@ Add to `~/.claude/settings.json`:
 ```json
 {
   "mcpServers": {
-    "pwnagent": {
+    "pentestpilot": {
       "command": "python3",
-      "args": ["/path/to/penagent/mcp_server.py"]
+      "args": ["/path/to/pentestpilot/mcp_server.py"]
     }
   }
 }
@@ -268,7 +276,7 @@ Once configured, these tools are available directly in Claude Code:
 
 ## Custom Plugins
 
-Create a Python file in any directory, and PwnAgent will auto-discover and register it:
+Create a Python file in any directory, and PentestPilot will auto-discover and register it:
 
 ```python
 # my_plugins/custom_scanner.py
@@ -295,7 +303,7 @@ Interactive mode is enabled by default. The agent pauses for user confirmation b
 
 ### Responsibility Boundary
 
-PwnAgent no longer enforces built-in scope or rate-limit checks. If you need authorization boundaries, safe-target allowlists, or execution throttling, you must implement them externally in your own workflow, wrapper, proxy, or deployment environment.
+PentestPilot no longer enforces built-in scope or rate-limit checks. If you need authorization boundaries, safe-target allowlists, or execution throttling, you must implement them externally in your own workflow, wrapper, proxy, or deployment environment.
 
 ## Configuration
 
@@ -317,7 +325,7 @@ agent:
 
 # LLM provider
 llm:
-  provider: "anthropic"
+  provider: "anthropic"  # anthropic / minimax / openai / gemini / groq / xai / together / fireworks / mistral / ...
   providers:
     anthropic:
       api_style: "anthropic"
@@ -334,6 +342,36 @@ llm:
       api_key_env: "OPENAI_API_KEY"
       api_key: ""
       base_url: "https://api.openai.com/v1"
+    gemini:
+      api_style: "openai"
+      api_key_env: "GEMINI_API_KEY"
+      api_key: ""
+      base_url: "https://generativelanguage.googleapis.com/v1beta/openai/"
+    groq:
+      api_style: "openai"
+      api_key_env: "GROQ_API_KEY"
+      api_key: ""
+      base_url: "https://api.groq.com/openai/v1"
+    xai:
+      api_style: "openai"
+      api_key_env: "XAI_API_KEY"
+      api_key: ""
+      base_url: "https://api.x.ai/v1"
+    together:
+      api_style: "openai"
+      api_key_env: "TOGETHER_API_KEY"
+      api_key: ""
+      base_url: "https://api.together.xyz/v1"
+    fireworks:
+      api_style: "openai"
+      api_key_env: "FIREWORKS_API_KEY"
+      api_key: ""
+      base_url: "https://api.fireworks.ai/inference/v1"
+    mistral:
+      api_style: "openai"
+      api_key_env: "MISTRAL_API_KEY"
+      api_key: ""
+      base_url: "https://api.mistral.ai/v1"
 
 # Report output
 report:

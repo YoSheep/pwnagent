@@ -1,13 +1,13 @@
 [tool.poetry]
-name = "pwnagent"
+name = "pentestpilot"
 version = "1.0.0"
 description = "AI 驱动的渗透测试框架（仅限授权测试）"
-authors = ["PwnAgent Team"]
+authors = ["PentestPilot Team"]
 readme = "README.md"
 packages = [{include = "core"}, {include = "modules"}, {include = "tools"}, {include = "knowledge"}]
 
 [tool.poetry.scripts]
-pwn = "main:app"
+pentestpilot = "main:app"
 
 [tool.poetry.dependencies]
 python = "^3.11"

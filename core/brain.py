@@ -17,7 +17,7 @@ from core.llm import LLMConfigurationError, get_runtime
 
 console = Console()
 
-SYSTEM_PROMPT = """你是 PwnAgent，一个专业的渗透测试 AI 助手。
+SYSTEM_PROMPT = """你是 PentestPilot，一个专业的渗透测试 AI 助手。
 你只对已获得书面授权的目标执行测试操作。
 
 行为准则：

@@ -134,7 +134,7 @@ def _probe_web_services(subdomains: list[dict]):
         follow_redirects=True,
         timeout=8.0,
         verify=False,
-        headers={"User-Agent": "Mozilla/5.0 (PwnAgent/1.0)"},
+        headers={"User-Agent": "Mozilla/5.0 (PentestPilot/1.0)"},
     ) as client:
         for sub in subdomains:
             hostname = sub["subdomain"]
@@ -154,5 +154,4 @@ def _extract_title(html: str) -> str:
     import re
     m = re.search(r"<title[^>]*>(.*?)</title>", html, re.IGNORECASE | re.DOTALL)
     return m.group(1).strip()[:100] if m else ""
-
 

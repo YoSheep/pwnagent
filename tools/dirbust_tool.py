@@ -9,7 +9,7 @@ from typing import Any
 
 import httpx
 
-_UA = "Mozilla/5.0 (PwnAgent/1.0)"
+_UA = "Mozilla/5.0 (PentestPilot/1.0)"
 
 # 精选路径字典（按类别组织）
 _WORDLIST = {
@@ -188,5 +188,4 @@ def _extract_title(html: str) -> str:
     import re
     m = re.search(r"<title[^>]*>(.*?)</title>", html, re.IGNORECASE | re.DOTALL)
     return m.group(1).strip()[:100] if m else ""
-
 

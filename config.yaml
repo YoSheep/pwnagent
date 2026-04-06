@@ -1,4 +1,4 @@
-# PwnAgent 配置文件
+# PentestPilot 配置文件
 #
 # 密钥建议优先写到仓库根目录的 .env（该文件已被 .gitignore 忽略），
 # 也可以直接填在下方各 provider 的 api_key 字段里。
@@ -7,6 +7,12 @@
 # export ANTHROPIC_API_KEY="your-anthropic-key"
 # export MINIMAX_API_KEY="your-minimax-key"
 # export OPENAI_API_KEY="your-openai-key"
+# export GEMINI_API_KEY="your-gemini-key"
+# export GROQ_API_KEY="your-groq-key"
+# export XAI_API_KEY="your-xai-key"
+# export TOGETHER_API_KEY="your-together-key"
+# export FIREWORKS_API_KEY="your-fireworks-key"
+# export MISTRAL_API_KEY="your-mistral-key"
 # export DEEPSEEK_API_KEY="your-deepseek-key"
 # export OPENROUTER_API_KEY="your-openrouter-key"
 # export MOONSHOT_API_KEY="your-moonshot-key"
@@ -29,7 +35,7 @@ agent:
 
 # LLM / Provider 配置
 llm:
-  provider: "anthropic"   # 可切换为 minimax / openai / deepseek / openrouter / moonshot / dashscope / zhipu / siliconflow / ollama
+  provider: "anthropic"   # 可切换为 anthropic / minimax / openai / gemini / groq / xai / together / fireworks / mistral / deepseek / openrouter / moonshot / dashscope / zhipu / siliconflow / ollama
   timeout: 120
   providers:
     anthropic:
@@ -68,6 +74,78 @@ llm:
         exploit: "gpt-5"
         post_exploit: "gpt-5"
 
+    gemini:
+      api_style: "openai"
+      api_key_env: "GEMINI_API_KEY"
+      api_key: ""
+      base_url: "https://generativelanguage.googleapis.com/v1beta/openai/"
+      models:
+        brain: ""          # 预留：填写该 provider 实际可用的模型名；留空表示仅预留 key/base_url
+        planner: ""
+        knowledge: ""
+        exploit: ""
+        post_exploit: ""
+
+    groq:
+      api_style: "openai"
+      api_key_env: "GROQ_API_KEY"
+      api_key: ""
+      base_url: "https://api.groq.com/openai/v1"
+      models:
+        brain: ""          # 预留：填写该 provider 实际可用的模型名；留空表示仅预留 key/base_url
+        planner: ""
+        knowledge: ""
+        exploit: ""
+        post_exploit: ""
+
+    xai:
+      api_style: "openai"
+      api_key_env: "XAI_API_KEY"
+      api_key: ""
+      base_url: "https://api.x.ai/v1"
+      models:
+        brain: ""          # 预留：填写该 provider 实际可用的模型名；留空表示仅预留 key/base_url
+        planner: ""
+        knowledge: ""
+        exploit: ""
+        post_exploit: ""
+
+    together:
+      api_style: "openai"
+      api_key_env: "TOGETHER_API_KEY"
+      api_key: ""
+      base_url: "https://api.together.xyz/v1"
+      models:
+        brain: ""          # 预留：填写该 provider 实际可用的模型名；留空表示仅预留 key/base_url
+        planner: ""
+        knowledge: ""
+        exploit: ""
+        post_exploit: ""
+
+    fireworks:
+      api_style: "openai"
+      api_key_env: "FIREWORKS_API_KEY"
+      api_key: ""
+      base_url: "https://api.fireworks.ai/inference/v1"
+      models:
+        brain: ""          # 预留：填写该 provider 实际可用的模型名；留空表示仅预留 key/base_url
+        planner: ""
+        knowledge: ""
+        exploit: ""
+        post_exploit: ""
+
+    mistral:
+      api_style: "openai"
+      api_key_env: "MISTRAL_API_KEY"
+      api_key: ""
+      base_url: "https://api.mistral.ai/v1"
+      models:
+        brain: ""          # 预留：填写该 provider 实际可用的模型名；留空表示仅预留 key/base_url
+        planner: ""
+        knowledge: ""
+        exploit: ""
+        post_exploit: ""
+
     deepseek:
       api_style: "openai"
       api_key_env: "DEEPSEEK_API_KEY"
@@ -87,7 +165,7 @@ llm:
       base_url: ""         # 预留：按 OpenRouter 官方 API Base URL 填写
       default_headers:
         HTTP-Referer: ""   # 可选：填写你的站点/仓库地址
-        X-Title: "PwnAgent"
+        X-Title: "PentestPilot"
       models:
         brain: ""
         planner: ""

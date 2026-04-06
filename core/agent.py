@@ -27,7 +27,7 @@ PARALLEL_WORKERS = 4
 MAX_REPLAN_RETRIES = 2  # 同一阶段最多 replan 次数
 
 
-class PwnAgent:
+class PentestPilot:
     def __init__(
         self,
         session: PentestSession,
@@ -63,7 +63,7 @@ class PwnAgent:
             f"目标: [bold cyan]{self.session.target}[/bold cyan]\n"
             f"Session ID: [dim]{self.session_id}[/dim]\n"
             f"规划模式: {'[green]启用[/green]' if self.use_planner else '[dim]关闭[/dim]'}",
-            title="[bold green]PwnAgent 启动[/bold green]",
+            title="[bold green]PentestPilot 启动[/bold green]",
             border_style="green",
         ))
 

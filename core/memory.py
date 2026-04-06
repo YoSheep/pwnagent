@@ -10,7 +10,7 @@ from pathlib import Path
 
 
 class ShortTermMemory:
-    """消息历史管理（PwnAgent 内部统一消息格式）。"""
+    """消息历史管理（PentestPilot 内部统一消息格式）。"""
 
     def __init__(self, max_messages: int = 40):
         self.max_messages = max_messages

@@ -71,7 +71,7 @@ def _probe_with_python(target: str, paths: list) -> dict[str, Any]:
         follow_redirects=True,
         timeout=15.0,
         verify=False,
-        headers={"User-Agent": "Mozilla/5.0 (PwnAgent/1.0)"},
+        headers={"User-Agent": "Mozilla/5.0 (PentestPilot/1.0)"},
     ) as client:
         for url in urls:
             try:

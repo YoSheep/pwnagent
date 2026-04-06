@@ -189,7 +189,7 @@ def python_vuln_check(target: str, severity: str = "critical,high,medium") -> di
         follow_redirects=True,
         timeout=10.0,
         verify=False,
-        headers={"User-Agent": "Mozilla/5.0 (PwnAgent/1.0)"},
+        headers={"User-Agent": "Mozilla/5.0 (PentestPilot/1.0)"},
     ) as client:
         for vuln, check_fn in _RULES:
             if vuln.severity not in allowed_severities:
