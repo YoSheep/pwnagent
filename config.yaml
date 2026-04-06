@@ -1,4 +1,18 @@
 # PwnAgent 配置文件
+#
+# 密钥建议优先写到仓库根目录的 .env（该文件已被 .gitignore 忽略），
+# 也可以直接填在下方各 provider 的 api_key 字段里。
+#
+# 常用环境变量示例：
+# export ANTHROPIC_API_KEY="your-anthropic-key"
+# export MINIMAX_API_KEY="your-minimax-key"
+# export OPENAI_API_KEY="your-openai-key"
+# export DEEPSEEK_API_KEY="your-deepseek-key"
+# export OPENROUTER_API_KEY="your-openrouter-key"
+# export MOONSHOT_API_KEY="your-moonshot-key"
+# export DASHSCOPE_API_KEY="your-dashscope-key"
+# export ZHIPU_API_KEY="your-zhipu-key"
+# export SILICONFLOW_API_KEY="your-siliconflow-key"
 
 # 工具路径（留空则自动检测 PATH）
 tools:
@@ -23,9 +37,137 @@ scope: []
 # Agent 行为
 agent:
   max_steps: 50
-  model: "claude-opus-4-5"
   interactive: true
   verbose: false
+
+# LLM / Provider 配置
+llm:
+  provider: "anthropic"   # 可切换为 minimax / openai / deepseek / openrouter / moonshot / dashscope / zhipu / siliconflow / ollama
+  timeout: 120
+  providers:
+    anthropic:
+      api_style: "anthropic"
+      api_key_env: "ANTHROPIC_API_KEY"
+      api_key: ""          # 可直接填 key，但不建议提交到 Git
+      base_url: ""         # 官方 Anthropic 留空；代理或中转网关再填写
+      models:
+        brain: "claude-opus-4-5"
+        planner: "claude-sonnet-4-20250514"
+        knowledge: "claude-sonnet-4-20250514"
+        exploit: "claude-opus-4-5"
+        post_exploit: "claude-opus-4-5"
+
+    minimax:
+      api_style: "anthropic"
+      api_key_env: "MINIMAX_API_KEY"
+      api_key: ""          # MiniMax key 可写这里，或放到 .env / 环境变量
+      base_url: "https://api.minimax.io/anthropic/v1"
+      models:
+        brain: "MiniMax-M2.7"
+        planner: "MiniMax-M2.7"
+        knowledge: "MiniMax-M2.7"
+        exploit: "MiniMax-M2.7"
+        post_exploit: "MiniMax-M2.7"
+
+    openai:
+      api_style: "openai"
+      api_key_env: "OPENAI_API_KEY"
+      api_key: ""
+      base_url: "https://api.openai.com/v1"
+      models:
+        brain: "gpt-5"
+        planner: "gpt-5-mini"
+        knowledge: "gpt-5-mini"
+        exploit: "gpt-5"
+        post_exploit: "gpt-5"
+
+    deepseek:
+      api_style: "openai"
+      api_key_env: "DEEPSEEK_API_KEY"
+      api_key: ""
+      base_url: ""         # 预留：按 DeepSeek 官方 OpenAI-compatible Base URL 填写
+      models:
+        brain: ""
+        planner: ""
+        knowledge: ""
+        exploit: ""
+        post_exploit: ""
+
+    openrouter:
+      api_style: "openai"
+      api_key_env: "OPENROUTER_API_KEY"
+      api_key: ""
+      base_url: ""         # 预留：按 OpenRouter 官方 API Base URL 填写
+      default_headers:
+        HTTP-Referer: ""   # 可选：填写你的站点/仓库地址
+        X-Title: "PwnAgent"
+      models:
+        brain: ""
+        planner: ""
+        knowledge: ""
+        exploit: ""
+        post_exploit: ""
+
+    moonshot:
+      api_style: "openai"
+      api_key_env: "MOONSHOT_API_KEY"
+      api_key: ""
+      base_url: ""         # 预留：按 Moonshot / Kimi 官方兼容地址填写
+      models:
+        brain: ""
+        planner: ""
+        knowledge: ""
+        exploit: ""
+        post_exploit: ""
+
+    dashscope:
+      api_style: "openai"
+      api_key_env: "DASHSCOPE_API_KEY"
+      api_key: ""
+      base_url: ""         # 预留：按阿里云百炼 DashScope 官方兼容地址填写
+      models:
+        brain: ""
+        planner: ""
+        knowledge: ""
+        exploit: ""
+        post_exploit: ""
+
+    zhipu:
+      api_style: "openai"
+      api_key_env: "ZHIPU_API_KEY"
+      api_key: ""
+      base_url: ""         # 预留：按智谱官方兼容地址填写
+      models:
+        brain: ""
+        planner: ""
+        knowledge: ""
+        exploit: ""
+        post_exploit: ""
+
+    siliconflow:
+      api_style: "openai"
+      api_key_env: "SILICONFLOW_API_KEY"
+      api_key: ""
+      base_url: ""         # 预留：按 SiliconFlow 官方兼容地址填写
+      models:
+        brain: ""
+        planner: ""
+        knowledge: ""
+        exploit: ""
+        post_exploit: ""
+
+    ollama:
+      api_style: "openai"
+      api_key_env: ""
+      api_key: "ollama"    # Ollama 通常不校验 key，这里保留占位值
+      api_key_optional: true
+      base_url: "http://127.0.0.1:11434/v1"
+      models:
+        brain: ""
+        planner: ""
+        knowledge: ""
+        exploit: ""
+        post_exploit: ""
 
 # 报告
 report:

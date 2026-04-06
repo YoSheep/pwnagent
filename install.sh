@@ -51,6 +51,7 @@ success "Python $PY_VER ✓"
 info "安装 Python 依赖..."
 pip install -q \
     anthropic \
+    openai \
     "mcp[cli]" \
     rich \
     typer \
@@ -58,6 +59,7 @@ pip install -q \
     httpx \
     jinja2 \
     pyyaml \
+    python-dotenv \
     pydantic \
     sqlalchemy \
     python-nmap
@@ -207,6 +209,7 @@ success "PwnAgent 安装完成！"
 echo ""
 echo -e "${BOLD}快速启动：${NC}"
 echo "  python3 main.py scan http://TARGET --scope 192.168.1.0/24"
+echo "  然后按需编辑 config.yaml 的 llm.provider，或在 .env / 环境变量里填写 API key"
 echo ""
 echo -e "${BOLD}MCP Server 独立启动：${NC}"
 echo "  python3 mcp_server.py --scope 192.168.1.0/24"

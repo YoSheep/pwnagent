@@ -94,6 +94,7 @@ def _run_agent(
     plugins: str | None,
 ):
     from core.agent import PwnAgent
+    from core.llm import LLMConfigurationError
     from modules.reporter import generate_report
 
     # 工具注册中心
@@ -131,16 +132,20 @@ def _run_agent(
     except ImportError:
         pass
 
-    agent = PwnAgent(
-        session=session,
-        tools=registry.get_tools(),
-        tool_defs=registry.get_tool_defs(),
-        interactive=interactive,
-        verbose=verbose,
-        rag_retriever=rag_retriever,
-        use_planner=use_planner,
-    )
-    agent.run()
+    try:
+        agent = PwnAgent(
+            session=session,
+            tools=registry.get_tools(),
+            tool_defs=registry.get_tool_defs(),
+            interactive=interactive,
+            verbose=verbose,
+            rag_retriever=rag_retriever,
+            use_planner=use_planner,
+        )
+        agent.run()
+    except LLMConfigurationError as e:
+        console.print(f"[red]LLM 配置错误: {e}[/red]")
+        raise typer.Exit(1)
 
 
 # ==================================================================
@@ -152,12 +157,12 @@ def ask(
     question: str = typer.Argument(..., help="安全相关问题"),
 ):
     """向 PwnAgent 知识库提问（不执行扫描）。"""
-    import anthropic
+    from core.llm import LLMConfigurationError
     from knowledge.retriever import retrieve_context
+    from core.llm import stream_text
 
     rag_context = retrieve_context(question, n_results=5)
 
-    client = anthropic.Anthropic()
     system = (
         "你是 PwnAgent 知识助手，擅长网络安全、渗透测试、漏洞分析。\n"
         "根据知识库内容和你的专业知识回答用户问题。\n"
@@ -167,16 +172,19 @@ def ask(
     if rag_context:
         prompt = f"{question}\n\n{rag_context}"
 
-    with client.messages.stream(
-        model="claude-sonnet-4-20250514",
-        max_tokens=2048,
-        system=system,
-        messages=[{"role": "user", "content": prompt}],
-    ) as stream:
+    try:
         console.print()
-        for text in stream.text_stream:
+        for text in stream_text(
+            role="knowledge",
+            system=system,
+            prompt=prompt,
+            max_tokens=2048,
+        ):
             console.print(text, end="")
         console.print()
+    except LLMConfigurationError as e:
+        console.print(f"[red]LLM 配置错误: {e}[/red]")
+        raise typer.Exit(1)
 
 
 # ==================================================================
