@@ -18,7 +18,6 @@ from rich.table import Table
 from core.brain import Brain, ThinkResult, ToolCall
 from core.memory import LongTermMemory, ShortTermMemory
 from core.planner import PhasePlan, Planner
-from core.safety import AuthorizationError, SafetyGuard
 from core.state_machine import Finding, PentestSession, Phase
 
 console = Console()
@@ -51,7 +50,6 @@ class PwnAgent:
         self.planner = Planner() if use_planner else None
         self.short_mem = ShortTermMemory(max_messages=40)
         self.long_mem = LongTermMemory(db_path=db_path)
-        self.safety = SafetyGuard(scope=session.scope)
         self.rag_retriever = rag_retriever
 
         self._persist_session()
@@ -352,12 +350,6 @@ class PwnAgent:
         return results
 
     def _execute_tool(self, tool_name: str, action_input: dict) -> Any:
-        target = action_input.get("target", self.session.target)
-        try:
-            self.safety.authorize(target, tool_name)
-        except AuthorizationError as e:
-            return {"error": str(e)}
-
         if tool_name not in self.tools:
             return {"error": f"未知工具: {tool_name}，可用: {list(self.tools.keys())}"}
 

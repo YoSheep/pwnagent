@@ -57,8 +57,8 @@ def _build_registry(extra_plugins: str | None = None) -> ToolRegistry:
 @app.command()
 def scan(
     target: str = typer.Argument(..., help="目标 URL 或 IP"),
-    scope: str = typer.Option(..., "--scope", "-s",
-                              help="授权范围，逗号分隔，如 192.168.1.0/24"),
+    scope: str = typer.Option("", "--scope", "-s",
+                              help="可选：在 session / report 中记录测试范围，逗号分隔"),
     output: str = typer.Option("./reports", "--output", "-o", help="报告输出目录"),
     interactive: bool = typer.Option(True, "--interactive/--no-interactive",
                                      help="交互模式：高风险操作前暂停确认"),
@@ -79,9 +79,6 @@ def scan(
         raise typer.Exit(1)
 
     scope_list = [s.strip() for s in scope.split(",") if s.strip()]
-    if not scope_list:
-        console.print("[red]错误: 必须指定授权范围 (--scope)[/red]")
-        raise typer.Exit(1)
 
     Path(output).mkdir(parents=True, exist_ok=True)
 

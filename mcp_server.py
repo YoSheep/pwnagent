@@ -3,18 +3,14 @@ PwnAgent MCP Server
 将所有安全测试工具暴露为 MCP tools，供 Claude Code 及其他 MCP 客户端直接调用。
 
 启动方式（stdio，适用于 Claude Code）:
-  python3 mcp_server.py --scope 192.168.1.0/24
+  python3 mcp_server.py
 
 Claude Code 配置（~/.claude/settings.json）:
   {
     "mcpServers": {
       "pwnagent": {
         "command": "python3",
-        "args": ["/path/to/penagent/mcp_server.py"],
-        "env": {
-          "PWNAGENT_SCOPE": "192.168.1.0/24,example.com",
-          "PWNAGENT_RATE_LIMIT": "10"
-        }
+        "args": ["/path/to/penagent/mcp_server.py"]
       }
     }
   }
@@ -27,7 +23,6 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from mcp.server.fastmcp import FastMCP
-from core.safety import AuthorizationError, SafetyGuard
 
 mcp = FastMCP(
     name="pwnagent",
@@ -35,20 +30,12 @@ mcp = FastMCP(
         "PwnAgent 安全测试工具集。\n"
         "包含端口扫描、Web 探测、漏洞扫描、1-day CVE 检测、"
         "XSS/SQLi/SSRF 检测、子域名枚举、目录爆破、JWT 分析等工具。\n"
-        "所有工具仅限对已获得书面授权的目标使用。"
+        "所有工具默认直接执行，请仅在合法授权场景中使用。"
     ),
 )
 
-_scope_env = os.environ.get("PWNAGENT_SCOPE", "")
-_scope: list[str] = [s.strip() for s in _scope_env.split(",") if s.strip()] if _scope_env else []
-_rate_limit = int(os.environ.get("PWNAGENT_RATE_LIMIT", "10"))
-_guard: SafetyGuard | None = SafetyGuard(_scope, _rate_limit) if _scope else None
-
-
 def _check(target: str, tool_name: str):
-    if _guard is None:
-        return
-    _guard.authorize(target, tool_name)
+    return None
 
 
 # ==================================================================
@@ -272,38 +259,6 @@ def python_port_scan(target: str, ports: str = "top1000") -> dict:
 
 
 # ==================================================================
-# 授权范围管理
-# ==================================================================
-
-@mcp.tool()
-def get_scope() -> dict:
-    """查看当前授权范围配置。"""
-    return {
-        "scope": _scope,
-        "rate_limit": _rate_limit,
-        "scope_configured": bool(_scope),
-        "note": "scope 为空时处于开发模式，不执行授权检查。生产环境须设置 PWNAGENT_SCOPE。",
-    }
-
-
-@mcp.tool()
-def set_scope(scope: list[str], rate_limit: int = 10) -> dict:
-    """
-    动态设置授权范围（当前进程有效）。
-    支持 CIDR（192.168.1.0/24）、域名（example.com）、通配符（*.example.com）。
-
-    Args:
-        scope:      授权范围列表
-        rate_limit: 每秒每工具最大请求数
-    """
-    global _scope, _rate_limit, _guard
-    _scope = scope
-    _rate_limit = rate_limit
-    _guard = SafetyGuard(scope, rate_limit)
-    return {"status": "ok", "scope": _scope, "rate_limit": _rate_limit}
-
-
-# ==================================================================
 # 报告工具
 # ==================================================================
 
@@ -352,14 +307,8 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(description="PwnAgent MCP Server")
-    parser.add_argument("--scope", help="授权范围，逗号分隔（也可用 PWNAGENT_SCOPE 环境变量）")
-    parser.add_argument("--rate-limit", type=int, default=10)
     parser.add_argument("--transport", choices=["stdio", "sse"], default="stdio")
     args = parser.parse_args()
 
-    if args.scope:
-        _scope = [s.strip() for s in args.scope.split(",")]
-        _guard = SafetyGuard(_scope, args.rate_limit)
-
-    print(f"[PwnAgent MCP] 启动，授权范围: {_scope or '未配置（开发模式）'}", file=sys.stderr)
+    print("[PwnAgent MCP] 启动，未启用授权检查", file=sys.stderr)
     mcp.run(transport=args.transport)
