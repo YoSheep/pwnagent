@@ -1,12 +1,23 @@
 """
 knowledge/ingest — CVE/OWASP/Writeup 文档入库
 """
+from __future__ import annotations
+
 import json
 from pathlib import Path
+from typing import Any
 
 import chromadb
+import yaml
 
-_DB_PATH = str(Path(__file__).parent / "db")
+from core.config import get_config
+
+_BASE_DIR = Path(__file__).resolve().parent
+_DB_PATH = str(_BASE_DIR / "db")
+_SEEDS_DIR = _BASE_DIR / "seeds"
+_MANIFEST_PATH = _SEEDS_DIR / "manifest.yaml"
+_AUTO_BOOTSTRAPPED = False
+
 _client = chromadb.PersistentClient(path=_DB_PATH)
 _collection = _client.get_or_create_collection(
     "pentest_knowledge",
@@ -40,9 +51,9 @@ def ingest_cve_json(filepath: str):
 def ingest_markdown(filepath: str, doc_type: str = "writeup"):
     """导入 Markdown 文档（writeup、OWASP 条目等），按段落切分。"""
     content = Path(filepath).read_text(encoding="utf-8")
-    # 按 ## 标题切分
     import re
-    sections = re.split(r'\n#{1,3} ', content)
+
+    sections = re.split(r"\n#{1,3} ", content)
     sections = [s.strip() for s in sections if len(s.strip()) > 100]
 
     docs = sections
@@ -55,81 +66,130 @@ def ingest_markdown(filepath: str, doc_type: str = "writeup"):
 
 
 def ingest_owasp_top10():
-    """内置 OWASP Top 10 知识。"""
-    owasp_entries = [
-        {
-            "id": "A01_broken_access_control",
-            "title": "A01:2021 – 访问控制失效",
-            "content": (
-                "访问控制失效是最常见的 Web 安全漏洞。\n"
-                "常见场景：IDOR（直接对象引用）、越权访问、目录遍历、CORS 配置错误、\n"
-                "以 URL 参数更改其他用户 ID、强制浏览未授权页面。\n"
-                "测试方法：修改 URL 参数（user_id）、越权访问其他账户数据、\n"
-                "访问 /admin 路径、测试 HTTP 方法（PUT/DELETE）。\n"
-                "修复：服务端实施访问控制、默认拒绝、记录访问失败。"
-            ),
-        },
-        {
-            "id": "A02_cryptographic_failures",
-            "title": "A02:2021 – 加密失败",
-            "content": (
-                "敏感数据明文传输或存储，或使用弱加密算法。\n"
-                "常见场景：HTTP 传输密码、MD5/SHA1 存储密码、弱 TLS 配置、\n"
-                "硬编码密钥、未加密数据库字段。\n"
-                "测试方法：抓包检查是否 HTTPS、检查响应头（HSTS）、\n"
-                "查找硬编码凭证（git 历史、.env 文件）。"
-            ),
-        },
-        {
-            "id": "A03_injection",
-            "title": "A03:2021 – 注入",
-            "content": (
-                "SQL 注入、NoSQL 注入、OS 命令注入、LDAP 注入。\n"
-                "SQL 注入 Payload：' OR '1'='1、1; DROP TABLE users--、\n"
-                "UNION SELECT 1,2,3--\n"
-                "检测方法：在参数末尾加单引号看是否报错、使用 sqlmap、\n"
-                "检查错误信息是否暴露数据库类型。\n"
-                "修复：参数化查询、ORM、输入验证。"
-            ),
-        },
-        {
-            "id": "A07_xss",
-            "title": "A07:2021 – 跨站脚本 (XSS)",
-            "content": (
-                "反射型 XSS：用户输入直接回显到页面。\n"
-                "存储型 XSS：恶意脚本存入数据库，所有访问用户受影响。\n"
-                "DOM 型 XSS：JavaScript 直接处理用户可控数据写入 DOM。\n"
-                "Payload：<script>alert(1)</script>、\n"
-                "<img src=x onerror=alert(1)>、\n"
-                "javascript:alert(document.cookie)\n"
-                "修复：HTML 实体编码、CSP、DOMPurify。"
-            ),
-        },
-        {
-            "id": "A08_ssrf",
-            "title": "A08:2021 – SSRF",
-            "content": (
-                "服务端请求伪造，攻击者控制服务器发出的请求。\n"
-                "常见入口：URL 参数（url=、callback=、redirect=）、Webhook、\n"
-                "图片/文件 URL 导入。\n"
-                "测试 Payload：http://169.254.169.254/latest/meta-data/（AWS）\n"
-                "http://127.0.0.1:22/、http://internal-service/\n"
-                "修复：白名单验证 URL、禁止访问内网地址、DNS 重绑定防护。"
-            ),
-        },
-    ]
+    """从外部 seed bundle 导入内置 OWASP 知识。"""
+    ingest_seed_bundle("owasp")
 
-    docs = [e["content"] for e in owasp_entries]
-    ids = [e["id"] for e in owasp_entries]
-    metas = [{"type": "owasp", "title": e["title"]} for e in owasp_entries]
 
-    _batch_upsert(docs, ids, metas)
-    print(f"[+] 导入 {len(docs)} 条 OWASP Top 10 条目")
+def ingest_seed_bundle(bundle_name: str) -> int:
+    """
+    导入内置 seed bundle。
+    seed 数据位于 knowledge/seeds/，通过 manifest.yaml 组织，避免把知识内容硬编码进 Python。
+    """
+    manifest = _load_seed_manifest()
+    bundles = manifest.get("bundles", {})
+    bundle = bundles.get(bundle_name)
+    if not isinstance(bundle, dict):
+        raise ValueError(f"未知 seed bundle: {bundle_name}")
+
+    seed_glob = str(bundle.get("seed_glob", "") or "")
+    doc_type = str(bundle.get("doc_type", bundle_name) or bundle_name)
+    if not seed_glob:
+        raise ValueError(f"seed bundle '{bundle_name}' 缺少 seed_glob 配置")
+
+    seed_files = sorted(_SEEDS_DIR.glob(seed_glob))
+    if not seed_files:
+        print(f"[!] seed bundle '{bundle_name}' 未找到任何 seed 文件")
+        return 0
+
+    docs: list[str] = []
+    ids: list[str] = []
+    metas: list[dict[str, Any]] = []
+
+    for seed_file in seed_files:
+        metadata, body = _load_seed_document(seed_file)
+        if not body:
+            continue
+
+        seed_id = str(metadata.get("id") or seed_file.stem)
+        docs.append(body)
+        ids.append(f"{bundle_name}_{seed_id}")
+        metas.append({
+            "type": doc_type,
+            "bundle": bundle_name,
+            "title": str(metadata.get("title") or seed_file.stem),
+            "source": str(metadata.get("source") or bundle.get("title", bundle_name)),
+            "source_url": str(metadata.get("source_url", "") or ""),
+            "version": str(metadata.get("version") or bundle.get("version", "")),
+            "tags": _normalize_tags(metadata.get("tags")),
+        })
+
+    if docs:
+        _batch_upsert(docs, ids, metas)
+        print(f"[+] 导入 {len(docs)} 条 seed 知识 ({bundle_name})")
+
+    return len(docs)
+
+
+def ensure_default_knowledge():
+    """
+    首次使用知识库时自动导入默认 seed。
+    当前使用 config.yaml 的 knowledge.auto_ingest_owasp 开关。
+    """
+    global _AUTO_BOOTSTRAPPED
+    if _AUTO_BOOTSTRAPPED:
+        return
+
+    _AUTO_BOOTSTRAPPED = True
+
+    try:
+        cfg = get_config()
+        knowledge_cfg = cfg.get("knowledge", {}) if isinstance(cfg, dict) else {}
+        should_ingest = bool(knowledge_cfg.get("auto_ingest_owasp", False))
+        if not should_ingest:
+            return
+
+        if _collection.count() == 0:
+            ingest_owasp_top10()
+    except Exception:
+        # 自动初始化失败时不阻塞主流程，用户仍可手动执行 ingest --owasp。
+        return
 
 
 # ------------------------------------------------------------------
 # 内部工具
 # ------------------------------------------------------------------
+
+
+def _load_seed_manifest() -> dict[str, Any]:
+    if not _MANIFEST_PATH.exists():
+        raise FileNotFoundError(f"seed manifest 不存在: {_MANIFEST_PATH}")
+
+    data = yaml.safe_load(_MANIFEST_PATH.read_text(encoding="utf-8")) or {}
+    if not isinstance(data, dict):
+        raise ValueError("seed manifest 格式错误，顶层必须是对象")
+    return data
+
+
+def _load_seed_document(path: Path) -> tuple[dict[str, Any], str]:
+    text = path.read_text(encoding="utf-8").strip()
+    metadata, body = _split_front_matter(text)
+    if "title" not in metadata:
+        metadata["title"] = path.stem.replace("_", " ")
+    return metadata, body.strip()
+
+
+def _split_front_matter(text: str) -> tuple[dict[str, Any], str]:
+    if not text.startswith("---\n"):
+        return {}, text
+
+    lines = text.splitlines()
+    for idx in range(1, len(lines)):
+        if lines[idx].strip() == "---":
+            raw_meta = "\n".join(lines[1:idx])
+            raw_body = "\n".join(lines[idx + 1:])
+            meta = yaml.safe_load(raw_meta) or {}
+            return (meta if isinstance(meta, dict) else {}), raw_body
+
+    return {}, text
+
+
+def _normalize_tags(value: Any) -> str:
+    if isinstance(value, list):
+        return ",".join(str(item) for item in value)
+    if isinstance(value, str):
+        return value
+    return ""
+
 
 def _batch_upsert(docs: list, ids: list, metas: list, batch_size: int = 100):
     for i in range(0, len(docs), batch_size):
@@ -164,6 +224,7 @@ def _extract_description(item: dict) -> str:
 
 if __name__ == "__main__":
     import sys
+
     ingest_owasp_top10()
     for path in sys.argv[1:]:
         p = Path(path)

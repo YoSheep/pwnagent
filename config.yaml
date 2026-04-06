@@ -35,7 +35,7 @@ agent:
 
 # LLM / Provider 配置
 llm:
-  provider: "anthropic"   # 可切换为 anthropic / minimax / openai / gemini / groq / xai / together / fireworks / mistral / deepseek / openrouter / moonshot / dashscope / zhipu / siliconflow / ollama
+  provider: "minimax"   # 可切换为 anthropic / minimax / openai / gemini / groq / xai / together / fireworks / mistral / deepseek / openrouter / moonshot / dashscope / zhipu / siliconflow / ollama
   timeout: 120
   providers:
     anthropic:

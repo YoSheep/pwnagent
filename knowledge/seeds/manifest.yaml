@@ -1,0 +1,7 @@
+version: 1
+bundles:
+  owasp:
+    title: "OWASP Top 10 2021"
+    version: "2021"
+    doc_type: "owasp"
+    seed_glob: "owasp_top10_2021/*.md"

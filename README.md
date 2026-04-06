@@ -117,6 +117,7 @@ pentestpilot/
 │
 ├── knowledge/              # RAG knowledge base
 │   ├── ingest.py           # Knowledge ingestion (OWASP / CVE / Markdown)
+│   ├── seeds/              # Built-in knowledge seed bundles (data files, not hardcoded Python)
 │   └── retriever.py        # Vector retrieval interface
 │
 ├── db/                     # SQLite database (session persistence)
@@ -156,7 +157,18 @@ export MISTRAL_API_KEY="your-mistral-key"
 
 `config.yaml` also keeps reserved API key slots for `deepseek`, `openrouter`, `moonshot`, `dashscope`, `zhipu`, and `siliconflow`.
 
-### 3. Run a Scan
+### 3. Initialize the Knowledge Base
+
+```bash
+# Import the built-in OWASP seed bundle into ChromaDB
+python3 main.py ingest --owasp
+
+# If knowledge.auto_ingest_owasp is true, the first ask/scan will also auto-import it when the DB is empty
+```
+
+The built-in OWASP knowledge now lives in `knowledge/seeds/` as versioned seed files plus `knowledge/seeds/manifest.yaml`, so the content is data-driven and easier to extend without editing Python logic.
+
+### 4. Run a Scan
 
 ```bash
 # Basic scan
@@ -184,7 +196,7 @@ python3 main.py scan http://target.com --plugins ./my_plugins
 | `tools` | List all registered tools |
 | `report <session_id>` | Re-generate report from a saved session |
 | `sessions` | List historical test sessions |
-| `ingest <file_path>` | Import documents into knowledge base |
+| `ingest [file_path] [--owasp]` | Import OWASP seed bundle or custom documents into the knowledge base |
 
 ```bash
 # List all tools
@@ -196,7 +208,7 @@ python3 main.py tools --category recon
 # Ask a security question
 python3 main.py ask "How to detect JWT none algorithm attacks?"
 
-# Import OWASP knowledge
+# Import the built-in OWASP seed bundle
 python3 main.py ingest --owasp
 
 # Import custom knowledge
