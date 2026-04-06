@@ -1,0 +1,36 @@
+[tool.poetry]
+name = "pwnagent"
+version = "1.0.0"
+description = "AI 驱动的渗透测试框架（仅限授权测试）"
+authors = ["PwnAgent Team"]
+readme = "README.md"
+packages = [{include = "core"}, {include = "modules"}, {include = "tools"}, {include = "knowledge"}]
+
+[tool.poetry.scripts]
+pwn = "main:app"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+anthropic = "^0.40"
+rich = "^13"
+typer = "^0.12"
+chromadb = "^0.5"
+playwright = "^1.40"
+httpx = "^0.27"
+pydantic = "^2"
+sqlalchemy = "^2"
+python-nmap = "^0.7"
+jinja2 = "^3"
+pyyaml = "^6"
+mcp = {version = "^1.0", extras = ["cli"]}
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+# 外部二进制工具（需单独安装）
+# nuclei:  go install -v github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest
+# httpx:   go install -v github.com/projectdiscovery/httpx/cmd/httpx@latest
+# sqlmap:  pip install sqlmap
+# nmap:    sudo apt install nmap / brew install nmap
+# playwright browsers: playwright install chromium
