@@ -152,7 +152,8 @@ export MISTRAL_API_KEY="your-mistral-key"
 
 # 然后在 config.yaml 里切换 llm.provider，例如:
 # llm:
-#   provider: "minimax"
+#   provider: "minimax_cn"      # 中国区接口
+#   provider: "minimax_global"  # 国际区接口
 ```
 
 `config.yaml` 里也已经给 `deepseek`、`openrouter`、`moonshot`、`dashscope`、`zhipu`、`siliconflow` 预留了 API key 入口。
@@ -328,18 +329,23 @@ agent:
 
 # LLM Provider
 llm:
-  provider: "anthropic"  # anthropic / minimax / openai / gemini / groq / xai / together / fireworks / mistral / ...
+  provider: "anthropic"  # anthropic / minimax_cn / minimax_global / openai / gemini / groq / xai / together / fireworks / mistral / ...
   providers:
     anthropic:
       api_style: "anthropic"
       api_key_env: "ANTHROPIC_API_KEY"
       api_key: ""
       base_url: ""
-    minimax:
+    minimax_cn:
       api_style: "anthropic"
       api_key_env: "MINIMAX_API_KEY"
       api_key: ""
-      base_url: "https://api.minimax.io/anthropic/v1"
+      base_url: "https://api.minimaxi.com/anthropic"
+    minimax_global:
+      api_style: "anthropic"
+      api_key_env: "MINIMAX_API_KEY"
+      api_key: ""
+      base_url: "https://api.minimax.io/anthropic"
     openai:
       api_style: "openai"
       api_key_env: "OPENAI_API_KEY"

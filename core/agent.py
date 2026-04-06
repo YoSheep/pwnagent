@@ -226,10 +226,10 @@ class PentestPilot:
         tool_suggestions = []
         for group in plan.parallel_groups:
             for tool in group.get("tools", []):
-                tool_suggestions.append(f"- {tool['name']}: {tool.get('reason', '')}")
+                tool_suggestions.append(f"- {tool.get('name', 'unknown_tool')}: {tool.get('reason', '')}")
         for step in plan.sequential_steps:
             for tool in step.get("tools", []):
-                tool_suggestions.append(f"- {tool['name']}: {tool.get('reason', '')}")
+                tool_suggestions.append(f"- {tool.get('name', 'unknown_tool')}: {tool.get('reason', '')}")
 
         return (
             f"[系统] 计划已调整。\n\n"
@@ -262,14 +262,14 @@ class PentestPilot:
             if plan.parallel_groups:
                 plan_text += "以下工具可以并行调用（请在同一次回复中同时调用）：\n"
                 for i, group in enumerate(plan.parallel_groups):
-                    tools_list = ", ".join(t["name"] for t in group.get("tools", []))
+                    tools_list = ", ".join(t.get("name", "unknown_tool") for t in group.get("tools", []))
                     plan_text += f"  组{i+1}: {tools_list}\n"
                 plan_text += "\n"
 
             if plan.sequential_steps:
                 plan_text += "以下步骤需要在并行组完成后顺序执行：\n"
                 for step in plan.sequential_steps:
-                    tools_list = ", ".join(t["name"] for t in step.get("tools", []))
+                    tools_list = ", ".join(t.get("name", "unknown_tool") for t in step.get("tools", []))
                     plan_text += f"  - {step.get('description', '')}: {tools_list}\n"
                 plan_text += "\n"
 
