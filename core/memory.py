@@ -10,14 +10,14 @@ from pathlib import Path
 
 
 class ShortTermMemory:
-    """消息历史管理（Anthropic messages 格式）。"""
+    """消息历史管理（PwnAgent 内部统一消息格式）。"""
 
     def __init__(self, max_messages: int = 40):
         self.max_messages = max_messages
         self._messages: list[dict] = []
 
     def add_message(self, message: dict):
-        """添加完整的 Anthropic 消息 dict（保留 role + content 结构）。"""
+        """添加完整消息 dict（保留 role + content 结构）。"""
         self._messages.append(message)
         self._trim()
 

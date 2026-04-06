@@ -19,7 +19,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/python-3.11+-blue.svg" alt="Python">
-  <img src="https://img.shields.io/badge/LLM-Claude-blueviolet.svg" alt="Claude">
+  <img src="https://img.shields.io/badge/LLM-Multi--Provider-blueviolet.svg" alt="Multi Provider">
   <img src="https://img.shields.io/badge/license-authorized--use--only-red.svg" alt="License">
 </p>
 
@@ -29,11 +29,12 @@
 
 ## What is PwnAgent?
 
-PwnAgent is an AI-driven penetration testing framework built on Anthropic Claude. It uses a **ReAct (Reason + Act)** agent architecture to autonomously execute the full pentest lifecycle — from reconnaissance to exploitation to reporting. A built-in SafetyGuard ensures all operations are strictly confined to authorized scope.
+PwnAgent is an AI-driven penetration testing framework with multi-provider LLM support. It uses a **ReAct (Reason + Act)** agent architecture to autonomously execute the full pentest lifecycle — from reconnaissance to exploitation to reporting. It currently supports Anthropic, MiniMax via Anthropic-compatible API, and reserves configuration for multiple OpenAI-compatible vendors. A built-in SafetyGuard ensures all operations are strictly confined to authorized scope.
 
 ## Key Features
 
-- **Single Agent + Parallel Tool Execution** — ReAct loop powered by Claude, with `ThreadPoolExecutor` for concurrent tool dispatch. Balances reasoning coherence with execution speed
+- **Multi-Provider LLM Layer** — Brain / Planner / Ask / Exploit / Post-Exploit all use a unified provider config, so you can switch between Anthropic, MiniMax, and other compatible vendors in `config.yaml`
+- **Single Agent + Parallel Tool Execution** — ReAct loop powered by a single agent, with `ThreadPoolExecutor` for concurrent tool dispatch. Balances reasoning coherence with execution speed
 - **Dynamic Planning & Recovery** — Planner generates phase-specific execution plans (parallel groups / sequential steps). On failure, Replanner auto-adjusts strategy with up to 2 retries
 - **RAG-Enhanced Decisions** — ChromaDB knowledge base (ships with OWASP Top 10) provides contextual reference for agent decision-making
 - **SafetyGuard** — Mandatory pre-execution authorization checks (CIDR / domain / wildcard) + rate limiting. Cannot be bypassed
@@ -61,7 +62,7 @@ PwnAgent is an AI-driven penetration testing framework built on Anthropic Claude
 ┌─────────────────────────────────────┐
 │          ReAct Agent Loop            │
 │                                     │
-│  Brain (Claude) ──> Parallel Tools   │
+│  Brain (LLM Provider) ──> Parallel Tools│
 │       ^                  │          │
 │       └── Observations <─┘          │
 │                                     │
@@ -91,7 +92,9 @@ penagent/
 │
 ├── core/                   # Core engine
 │   ├── agent.py            # ReAct main loop + parallel tool execution
-│   ├── brain.py            # Claude API interaction (streaming + multi-tool calls)
+│   ├── brain.py            # Provider interaction (streaming + multi-tool calls)
+│   ├── config.py           # config.yaml / .env loader
+│   ├── llm.py              # Multi-provider adapter layer
 │   ├── planner.py          # Dynamic planner + Replanner
 │   ├── memory.py           # Short-term context + SQLite long-term persistence
 │   ├── safety.py           # SafetyGuard: authorization + rate limiting
@@ -137,13 +140,20 @@ penagent/
 chmod +x install.sh && ./install.sh
 
 # Or manual install
-pip install anthropic rich typer httpx jinja2 pyyaml chromadb "mcp[cli]"
+pip install anthropic openai python-dotenv rich typer httpx jinja2 pyyaml chromadb "mcp[cli]"
 ```
 
 ### 2. Set API Key
 
 ```bash
+# Pick one provider you want to use
 export ANTHROPIC_API_KEY="sk-ant-..."
+export MINIMAX_API_KEY="your-minimax-key"
+export OPENAI_API_KEY="your-openai-key"
+
+# Then switch llm.provider in config.yaml, for example:
+# llm:
+#   provider: "minimax"
 ```
 
 ### 3. Run a Scan
@@ -319,9 +329,28 @@ rate_limits:
 # Agent behavior
 agent:
   max_steps: 50
-  model: "claude-opus-4-5"
   interactive: true
   verbose: false
+
+# LLM provider
+llm:
+  provider: "anthropic"
+  providers:
+    anthropic:
+      api_style: "anthropic"
+      api_key_env: "ANTHROPIC_API_KEY"
+      api_key: ""
+      base_url: ""
+    minimax:
+      api_style: "anthropic"
+      api_key_env: "MINIMAX_API_KEY"
+      api_key: ""
+      base_url: "https://api.minimax.io/anthropic/v1"
+    openai:
+      api_style: "openai"
+      api_key_env: "OPENAI_API_KEY"
+      api_key: ""
+      base_url: "https://api.openai.com/v1"
 
 # Report output
 report:
@@ -332,16 +361,16 @@ report:
 ## Requirements
 
 - Python 3.11+
-- Anthropic API Key
+- One configured LLM provider API key (Anthropic / MiniMax / OpenAI-compatible)
 - Optional: nmap, nuclei, httpx (Go), sqlmap, Playwright
 
 ## Tech Stack
 
 | Component | Technology |
 |-----------|-----------|
-| LLM | Anthropic Claude (native tool_use protocol) |
+| LLM | Anthropic / MiniMax / OpenAI-compatible |
 | Agent Framework | Native ReAct implementation (no LangChain) |
-| Streaming | Anthropic Streaming API (event-driven) |
+| Streaming | Anthropic / OpenAI-compatible streaming |
 | Parallel Execution | `concurrent.futures.ThreadPoolExecutor` |
 | Persistence | SQLite (WAL mode) |
 | Knowledge Base | ChromaDB vector database |
