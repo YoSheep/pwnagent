@@ -29,15 +29,15 @@
 
 ## What is PwnAgent?
 
-PwnAgent is an AI-driven penetration testing framework with multi-provider LLM support. It uses a **ReAct (Reason + Act)** agent architecture to autonomously execute the full pentest lifecycle — from reconnaissance to exploitation to reporting. It currently supports Anthropic, MiniMax via Anthropic-compatible API, and reserves configuration for multiple OpenAI-compatible vendors. A built-in SafetyGuard ensures all operations are strictly confined to authorized scope.
+PwnAgent is an AI-driven penetration testing framework with multi-provider LLM support. It uses a **ReAct (Reason + Act)** agent architecture to autonomously execute the full pentest lifecycle — from reconnaissance to exploitation to reporting. It currently supports Anthropic, MiniMax via Anthropic-compatible API, and reserves configuration for multiple OpenAI-compatible vendors.
 
 ## Key Features
 
 - **Multi-Provider LLM Layer** — Brain / Planner / Ask / Exploit / Post-Exploit all use a unified provider config, so you can switch between Anthropic, MiniMax, and other compatible vendors in `config.yaml`
+- **Direct Execution Model** — Scans and MCP tool calls now execute directly, so scope control and legal authorization must be handled by the operator
 - **Single Agent + Parallel Tool Execution** — ReAct loop powered by a single agent, with `ThreadPoolExecutor` for concurrent tool dispatch. Balances reasoning coherence with execution speed
 - **Dynamic Planning & Recovery** — Planner generates phase-specific execution plans (parallel groups / sequential steps). On failure, Replanner auto-adjusts strategy with up to 2 retries
 - **RAG-Enhanced Decisions** — ChromaDB knowledge base (ships with OWASP Top 10) provides contextual reference for agent decision-making
-- **SafetyGuard** — Mandatory pre-execution authorization checks (CIDR / domain / wildcard) + rate limiting. Cannot be bypassed
 - **Pure Python Fallbacks** — Every external binary tool (nmap, nuclei, httpx) has a pure Python implementation. Zero-dependency out-of-the-box
 - **MCP Server** — Exposes all tools via Model Context Protocol for direct use in Claude Code / IDE
 - **Plugin System** — ToolRegistry with auto-discovery of built-in tools + external plugin directory loading
@@ -97,7 +97,6 @@ penagent/
 │   ├── llm.py              # Multi-provider adapter layer
 │   ├── planner.py          # Dynamic planner + Replanner
 │   ├── memory.py           # Short-term context + SQLite long-term persistence
-│   ├── safety.py           # SafetyGuard: authorization + rate limiting
 │   └── state_machine.py    # Pentest phase state machine
 │
 ├── tools/                  # Tool layer
@@ -160,26 +159,26 @@ export OPENAI_API_KEY="your-openai-key"
 
 ```bash
 # Basic scan
-python3 main.py scan http://target.com --scope target.com
+python3 main.py scan http://target.com
 
-# Multiple authorized scopes
+# Optional: record scope metadata in the session/report
 python3 main.py scan 192.168.1.100 --scope "192.168.1.0/24,*.target.com"
 
 # Non-interactive + verbose output
-python3 main.py scan http://target.com --scope target.com --no-interactive --verbose
+python3 main.py scan http://target.com --no-interactive --verbose
 
-# Disable dynamic planner (let Claude decide freely)
-python3 main.py scan http://target.com --scope target.com --no-planner
+# Disable dynamic planner
+python3 main.py scan http://target.com --no-planner
 
 # Load custom plugins
-python3 main.py scan http://target.com --scope target.com --plugins ./my_plugins
+python3 main.py scan http://target.com --plugins ./my_plugins
 ```
 
 ## CLI Commands
 
 | Command | Description |
 |---------|-------------|
-| `scan <target> --scope <scope>` | Run full AI-driven penetration test |
+| `scan <target> [--scope <scope>]` | Run full AI-driven penetration test |
 | `ask <question>` | Query the knowledge base (no scanning) |
 | `tools` | List all registered tools |
 | `report <session_id>` | Re-generate report from a saved session |
@@ -216,11 +215,7 @@ Add to `~/.claude/settings.json`:
   "mcpServers": {
     "pwnagent": {
       "command": "python3",
-      "args": ["/path/to/penagent/mcp_server.py"],
-      "env": {
-        "PWNAGENT_SCOPE": "192.168.1.0/24,target.com",
-        "PWNAGENT_RATE_LIMIT": "10"
-      }
+      "args": ["/path/to/penagent/mcp_server.py"]
     }
   }
 }
@@ -289,24 +284,18 @@ def my_custom_scan(target: str, options: str = "") -> dict:
 ```
 
 ```bash
-python3 main.py scan http://target.com --scope target.com --plugins ./my_plugins
+python3 main.py scan http://target.com --plugins ./my_plugins
 ```
 
-## Safety Mechanisms
-
-### SafetyGuard
-
-All tool calls must pass SafetyGuard authorization before execution:
-
-- **CIDR Range Check** — IPs must fall within authorized CIDR ranges
-- **Domain Matching** — Supports exact match and wildcards (`*.example.com`)
-- **Subdomain Protection** — `notexample.com` won't match `example.com`
-- **URL Parse Defense** — Blocks bypass attempts like `http://evil@authorized_ip`
-- **Rate Limiting** — Per-tool configurable QPS caps to prevent excessive scanning
+## Interaction Model
 
 ### Interactive Mode
 
 Interactive mode is enabled by default. The agent pauses for user confirmation before high-risk operations (exploitation, post-exploitation).
+
+### Responsibility Boundary
+
+PwnAgent no longer enforces built-in scope or rate-limit checks. If you need authorization boundaries, safe-target allowlists, or execution throttling, you must implement them externally in your own workflow, wrapper, proxy, or deployment environment.
 
 ## Configuration
 
@@ -319,12 +308,6 @@ tools:
   httpx: ""
   nuclei: ""
   sqlmap: ""
-
-# Rate limits (max requests per second per tool)
-rate_limits:
-  default: 10
-  nmap_scan: 1
-  nuclei_scan: 50
 
 # Agent behavior
 agent:

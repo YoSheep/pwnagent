@@ -21,19 +21,6 @@ tools:
   nuclei: ""     # nuclei 二进制路径
   sqlmap: ""     # sqlmap 路径
 
-# 速率限制（每秒每工具最大请求数）
-rate_limits:
-  default: 10
-  nmap_scan: 1
-  nuclei_scan: 50
-  httpx_probe: 20
-  xss_scan: 5
-  sqli_scan: 3
-
-# 默认授权范围（运行时可通过 --scope 覆盖）
-# 生产环境：务必在此处配置实际授权范围！
-scope: []
-
 # Agent 行为
 agent:
   max_steps: 50

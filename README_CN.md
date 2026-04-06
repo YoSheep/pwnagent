@@ -29,15 +29,15 @@
 
 ## 什么是 PwnAgent？
 
-PwnAgent 是一个支持多 LLM Provider 的 AI 驱动渗透测试框架。采用 **ReAct（Reason + Act）** 智能体架构，能够自主执行从信息收集到漏洞利用的完整渗透测试流程。当前支持 Anthropic 官方接口、MiniMax 的 Anthropic 兼容接口，并为多种 OpenAI-compatible 厂商预留了配置入口。内置 SafetyGuard 安全门卫机制，确保所有操作严格限定在授权范围内。
+PwnAgent 是一个支持多 LLM Provider 的 AI 驱动渗透测试框架。采用 **ReAct（Reason + Act）** 智能体架构，能够自主执行从信息收集到漏洞利用的完整渗透测试流程。当前支持 Anthropic 官方接口、MiniMax 的 Anthropic 兼容接口，并为多种 OpenAI-compatible 厂商预留了配置入口。
 
 ## 核心特性
 
 - **多 Provider LLM 抽象层** — Brain / Planner / Ask / Exploit / Post-Exploit 统一走 provider 配置，可在 `config.yaml` 中切换 Anthropic、MiniMax 和其他兼容厂商
+- **直接执行模型** — 扫描和 MCP 工具调用现在都会直接执行，范围控制与合法授权需要由使用者自行保证
 - **单 Agent + 并行工具执行** — 基于 ReAct 循环，单个 Agent 通过 `ThreadPoolExecutor` 并行调度多个工具，兼顾推理一致性与执行效率
 - **动态规划与失败恢复** — Planner 在每个阶段生成执行计划（支持并行组 / 顺序步骤），失败时 Replanner 自动调整策略，最多重试 2 次
 - **RAG 知识增强** — 基于 ChromaDB 的知识库（内置 OWASP Top 10），为 Agent 决策提供上下文参考
-- **SafetyGuard 安全门卫** — 所有工具调用前强制检查授权范围（CIDR / 域名 / 通配符）+ 速率限制，不可绕过
 - **纯 Python 工具回退** — 所有外部二进制工具（nmap、nuclei、httpx）均有纯 Python 实现，零依赖开箱即用
 - **MCP Server** — 通过 Model Context Protocol 将所有工具暴露给 Claude Code，可直接在 IDE 中调用
 - **插件化工具系统** — ToolRegistry 自动发现内置工具，支持从外部目录加载自定义插件
@@ -97,7 +97,6 @@ penagent/
 │   ├── llm.py              # 多 Provider 适配层
 │   ├── planner.py          # 动态规划器 + Replanner
 │   ├── memory.py           # 短期上下文 + SQLite 长期持久化
-│   ├── safety.py           # SafetyGuard 授权检查 + 速率限制
 │   └── state_machine.py    # 渗透测试阶段状态机
 │
 ├── tools/                  # 工具层
@@ -160,26 +159,26 @@ export OPENAI_API_KEY="your-openai-key"
 
 ```bash
 # 基础扫描
-python3 main.py scan http://target.com --scope target.com
+python3 main.py scan http://target.com
 
-# 指定多个授权范围
+# 可选：在 session / report 里记录测试范围
 python3 main.py scan 192.168.1.100 --scope "192.168.1.0/24,*.target.com"
 
 # 非交互模式 + 详细输出
-python3 main.py scan http://target.com --scope target.com --no-interactive --verbose
+python3 main.py scan http://target.com --no-interactive --verbose
 
-# 禁用动态规划器（直接由 Claude 自主决策）
-python3 main.py scan http://target.com --scope target.com --no-planner
+# 禁用动态规划器
+python3 main.py scan http://target.com --no-planner
 
 # 加载自定义插件
-python3 main.py scan http://target.com --scope target.com --plugins ./my_plugins
+python3 main.py scan http://target.com --plugins ./my_plugins
 ```
 
 ## CLI 命令
 
 | 命令 | 说明 |
 |------|------|
-| `scan <target> --scope <范围>` | 执行完整 AI 驱动渗透测试 |
+| `scan <target> [--scope <范围>]` | 执行完整 AI 驱动渗透测试 |
 | `ask <问题>` | 向知识库提问（不执行扫描） |
 | `tools` | 列出所有已注册工具 |
 | `report <session_id>` | 从历史 session 重新生成报告 |
@@ -216,11 +215,7 @@ PwnAgent 提供 MCP Server，可将所有安全测试工具直接暴露给 Claud
   "mcpServers": {
     "pwnagent": {
       "command": "python3",
-      "args": ["/path/to/penagent/mcp_server.py"],
-      "env": {
-        "PWNAGENT_SCOPE": "192.168.1.0/24,target.com",
-        "PWNAGENT_RATE_LIMIT": "10"
-      }
+      "args": ["/path/to/penagent/mcp_server.py"]
     }
   }
 }
@@ -289,24 +284,16 @@ def my_custom_scan(target: str, options: str = "") -> dict:
 ```
 
 ```bash
-python3 main.py scan http://target.com --scope target.com --plugins ./my_plugins
+python3 main.py scan http://target.com --plugins ./my_plugins
 ```
 
-## 安全机制
-
-### SafetyGuard
-
-所有工具调用前必须通过 SafetyGuard 授权检查：
-
-- **CIDR 范围检查** — IP 必须在授权 CIDR 内
-- **域名匹配** — 支持精确匹配和通配符（`*.example.com`）
-- **子域名保护** — `notexample.com` 不会匹配 `example.com`
-- **URL 解析防御** — 拦截 `http://evil@authorized_ip` 等绕过尝试
-- **速率限制** — 每工具可配置 QPS 上限，防止过度扫描
-
-### 交互模式
+## 交互模式
 
 默认启用交互模式，在高风险操作（漏洞利用、后渗透）前暂停确认。
+
+## 责任边界
+
+PwnAgent 现在不再内置 scope 或 rate-limit 强制检查。如果你需要授权范围限制、安全目标白名单或执行节流，需要在你自己的工作流、包装层、代理层或部署环境中自行实现。
 
 ## 配置
 
@@ -319,12 +306,6 @@ tools:
   httpx: ""
   nuclei: ""
   sqlmap: ""
-
-# 速率限制（每秒最大请求数）
-rate_limits:
-  default: 10
-  nmap_scan: 1
-  nuclei_scan: 50
 
 # Agent 行为
 agent:

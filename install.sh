@@ -173,11 +173,7 @@ if [ -f "$MCP_CONFIG_FILE" ]; then
 cat << EOF
 "pwnagent": {
   "command": "python3",
-  "args": ["$SCRIPT_DIR/mcp_server.py"],
-  "env": {
-    "PWNAGENT_SCOPE": "",
-    "PWNAGENT_RATE_LIMIT": "10"
-  }
+  "args": ["$SCRIPT_DIR/mcp_server.py"]
 }
 EOF
     echo -e "${BOLD}-------------------${NC}"
@@ -188,11 +184,7 @@ else
   "mcpServers": {
     "pwnagent": {
       "command": "python3",
-      "args": ["$SCRIPT_DIR/mcp_server.py"],
-      "env": {
-        "PWNAGENT_SCOPE": "",
-        "PWNAGENT_RATE_LIMIT": "10"
-      }
+      "args": ["$SCRIPT_DIR/mcp_server.py"]
     }
   }
 }
@@ -208,11 +200,11 @@ echo "=================================================="
 success "PwnAgent 安装完成！"
 echo ""
 echo -e "${BOLD}快速启动：${NC}"
-echo "  python3 main.py scan http://TARGET --scope 192.168.1.0/24"
+echo "  python3 main.py scan http://TARGET"
 echo "  然后按需编辑 config.yaml 的 llm.provider，或在 .env / 环境变量里填写 API key"
 echo ""
 echo -e "${BOLD}MCP Server 独立启动：${NC}"
-echo "  python3 mcp_server.py --scope 192.168.1.0/24"
+echo "  python3 mcp_server.py"
 echo ""
 echo -e "${BOLD}在 Claude Code 中使用（配置好 MCP 后）：${NC}"
 echo "  使用 nmap_scan、httpx_probe、nuclei_scan 等工具直接对授权目标测试"
