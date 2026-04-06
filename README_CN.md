@@ -29,7 +29,7 @@
 
 ## 什么是 PwnAgent？
 
-PwnAgent 是一个支持多 LLM Provider 的 AI 驱动渗透测试框架。采用 **ReAct（Reason + Act）** 智能体架构，能够自主执行从信息收集到漏洞利用的完整渗透测试流程。当前支持 Anthropic 官方接口、MiniMax 的 Anthropic 兼容接口，并为多种 OpenAI-compatible 厂商预留了配置入口。
+PwnAgent 是一个支持多 LLM Provider 的 AI 驱动渗透测试框架。采用 **ReAct（Reason + Act）** 智能体架构，能够自主执行从信息收集到漏洞利用的完整渗透测试流程。当前支持 Anthropic 官方接口、MiniMax 的 Anthropic 兼容接口，并为多种 OpenAI-compatible 厂商预留了配置入口，包括 OpenAI、Gemini、Groq、xAI、Together、Fireworks、Mistral，以及 DeepSeek、OpenRouter 一类兼容网关。
 
 ## 核心特性
 
@@ -149,11 +149,19 @@ pip install anthropic openai python-dotenv rich typer httpx jinja2 pyyaml chroma
 export ANTHROPIC_API_KEY="sk-ant-..."
 export MINIMAX_API_KEY="your-minimax-key"
 export OPENAI_API_KEY="your-openai-key"
+export GEMINI_API_KEY="your-gemini-key"
+export GROQ_API_KEY="your-groq-key"
+export XAI_API_KEY="your-xai-key"
+export TOGETHER_API_KEY="your-together-key"
+export FIREWORKS_API_KEY="your-fireworks-key"
+export MISTRAL_API_KEY="your-mistral-key"
 
 # 然后在 config.yaml 里切换 llm.provider，例如:
 # llm:
 #   provider: "minimax"
 ```
+
+`config.yaml` 里也已经给 `deepseek`、`openrouter`、`moonshot`、`dashscope`、`zhipu`、`siliconflow` 预留了 API key 入口。
 
 ### 3. 运行扫描
 
@@ -315,7 +323,7 @@ agent:
 
 # LLM Provider
 llm:
-  provider: "anthropic"
+  provider: "anthropic"  # anthropic / minimax / openai / gemini / groq / xai / together / fireworks / mistral / ...
   providers:
     anthropic:
       api_style: "anthropic"
@@ -332,6 +340,36 @@ llm:
       api_key_env: "OPENAI_API_KEY"
       api_key: ""
       base_url: "https://api.openai.com/v1"
+    gemini:
+      api_style: "openai"
+      api_key_env: "GEMINI_API_KEY"
+      api_key: ""
+      base_url: "https://generativelanguage.googleapis.com/v1beta/openai/"
+    groq:
+      api_style: "openai"
+      api_key_env: "GROQ_API_KEY"
+      api_key: ""
+      base_url: "https://api.groq.com/openai/v1"
+    xai:
+      api_style: "openai"
+      api_key_env: "XAI_API_KEY"
+      api_key: ""
+      base_url: "https://api.x.ai/v1"
+    together:
+      api_style: "openai"
+      api_key_env: "TOGETHER_API_KEY"
+      api_key: ""
+      base_url: "https://api.together.xyz/v1"
+    fireworks:
+      api_style: "openai"
+      api_key_env: "FIREWORKS_API_KEY"
+      api_key: ""
+      base_url: "https://api.fireworks.ai/inference/v1"
+    mistral:
+      api_style: "openai"
+      api_key_env: "MISTRAL_API_KEY"
+      api_key: ""
+      base_url: "https://api.mistral.ai/v1"
 
 # 报告输出
 report:

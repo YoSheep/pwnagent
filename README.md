@@ -29,7 +29,7 @@
 
 ## What is PwnAgent?
 
-PwnAgent is an AI-driven penetration testing framework with multi-provider LLM support. It uses a **ReAct (Reason + Act)** agent architecture to autonomously execute the full pentest lifecycle — from reconnaissance to exploitation to reporting. It currently supports Anthropic, MiniMax via Anthropic-compatible API, and reserves configuration for multiple OpenAI-compatible vendors.
+PwnAgent is an AI-driven penetration testing framework with multi-provider LLM support. It uses a **ReAct (Reason + Act)** agent architecture to autonomously execute the full pentest lifecycle — from reconnaissance to exploitation to reporting. It currently supports Anthropic, MiniMax via Anthropic-compatible API, and reserves configuration for multiple OpenAI-compatible vendors including OpenAI, Gemini, Groq, xAI, Together, Fireworks, Mistral, DeepSeek, and OpenRouter-style gateways.
 
 ## Key Features
 
@@ -149,11 +149,19 @@ pip install anthropic openai python-dotenv rich typer httpx jinja2 pyyaml chroma
 export ANTHROPIC_API_KEY="sk-ant-..."
 export MINIMAX_API_KEY="your-minimax-key"
 export OPENAI_API_KEY="your-openai-key"
+export GEMINI_API_KEY="your-gemini-key"
+export GROQ_API_KEY="your-groq-key"
+export XAI_API_KEY="your-xai-key"
+export TOGETHER_API_KEY="your-together-key"
+export FIREWORKS_API_KEY="your-fireworks-key"
+export MISTRAL_API_KEY="your-mistral-key"
 
 # Then switch llm.provider in config.yaml, for example:
 # llm:
 #   provider: "minimax"
 ```
+
+`config.yaml` also keeps reserved API key slots for `deepseek`, `openrouter`, `moonshot`, `dashscope`, `zhipu`, and `siliconflow`.
 
 ### 3. Run a Scan
 
@@ -317,7 +325,7 @@ agent:
 
 # LLM provider
 llm:
-  provider: "anthropic"
+  provider: "anthropic"  # anthropic / minimax / openai / gemini / groq / xai / together / fireworks / mistral / ...
   providers:
     anthropic:
       api_style: "anthropic"
@@ -334,6 +342,36 @@ llm:
       api_key_env: "OPENAI_API_KEY"
       api_key: ""
       base_url: "https://api.openai.com/v1"
+    gemini:
+      api_style: "openai"
+      api_key_env: "GEMINI_API_KEY"
+      api_key: ""
+      base_url: "https://generativelanguage.googleapis.com/v1beta/openai/"
+    groq:
+      api_style: "openai"
+      api_key_env: "GROQ_API_KEY"
+      api_key: ""
+      base_url: "https://api.groq.com/openai/v1"
+    xai:
+      api_style: "openai"
+      api_key_env: "XAI_API_KEY"
+      api_key: ""
+      base_url: "https://api.x.ai/v1"
+    together:
+      api_style: "openai"
+      api_key_env: "TOGETHER_API_KEY"
+      api_key: ""
+      base_url: "https://api.together.xyz/v1"
+    fireworks:
+      api_style: "openai"
+      api_key_env: "FIREWORKS_API_KEY"
+      api_key: ""
+      base_url: "https://api.fireworks.ai/inference/v1"
+    mistral:
+      api_style: "openai"
+      api_key_env: "MISTRAL_API_KEY"
+      api_key: ""
+      base_url: "https://api.mistral.ai/v1"
 
 # Report output
 report:
