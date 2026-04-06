@@ -27,6 +27,9 @@ def retrieve_context(query: str, n_results: int = 3) -> str:
     若知识库为空或检索失败，返回空字符串。
     """
     try:
+        from knowledge.ingest import ensure_default_knowledge
+
+        ensure_default_knowledge()
         col = _get_collection()
         count = col.count()
         if count == 0:

@@ -117,6 +117,7 @@ pentestpilot/
 │
 ├── knowledge/              # RAG 知识库
 │   ├── ingest.py           # 知识导入（OWASP / CVE / Markdown）
+│   ├── seeds/              # 内置知识 seed bundle（数据文件，不再硬编码在 Python 中）
 │   └── retriever.py        # 向量检索接口
 │
 ├── db/                     # SQLite 数据库（会话持久化）
@@ -156,7 +157,18 @@ export MISTRAL_API_KEY="your-mistral-key"
 
 `config.yaml` 里也已经给 `deepseek`、`openrouter`、`moonshot`、`dashscope`、`zhipu`、`siliconflow` 预留了 API key 入口。
 
-### 3. 运行扫描
+### 3. 初始化知识库
+
+```bash
+# 将内置的 OWASP seed bundle 导入 ChromaDB
+python3 main.py ingest --owasp
+
+# 如果 knowledge.auto_ingest_owasp 为 true，那么在知识库为空时，第一次 ask/scan 也会自动导入
+```
+
+现在内置的 OWASP 知识位于 `knowledge/seeds/` 和 `knowledge/seeds/manifest.yaml`，属于数据驱动的 seed 文件，不再写死在 Python 代码里，后续扩展会更容易。
+
+### 4. 运行扫描
 
 ```bash
 # 基础扫描
@@ -184,7 +196,7 @@ python3 main.py scan http://target.com --plugins ./my_plugins
 | `tools` | 列出所有已注册工具 |
 | `report <session_id>` | 从历史 session 重新生成报告 |
 | `sessions` | 列出历史测试 session |
-| `ingest <文件路径>` | 向知识库导入文档 |
+| `ingest [文件路径] [--owasp]` | 向知识库导入内置 OWASP seed bundle 或自定义文档 |
 
 ```bash
 # 查看所有工具
@@ -196,7 +208,7 @@ python3 main.py tools --category recon
 # 提问安全问题
 python3 main.py ask "如何检测 JWT none algorithm 攻击？"
 
-# 导入 OWASP 知识
+# 导入内置 OWASP seed bundle
 python3 main.py ingest --owasp
 
 # 导入自定义知识
