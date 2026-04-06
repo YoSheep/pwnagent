@@ -54,7 +54,7 @@ llm:
       api_style: "anthropic"
       api_key_env: "MINIMAX_API_KEY"
       api_key: ""          # MiniMax key 可写这里，或放到 .env / 环境变量
-      base_url: "https://api.minimax.io/anthropic/v1"
+      base_url: "https://api.minimax.io/anthropic"
       models:
         brain: "MiniMax-M2.7"
         planner: "MiniMax-M2.7"

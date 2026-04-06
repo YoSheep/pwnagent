@@ -341,7 +341,7 @@ llm:
       api_style: "anthropic"
       api_key_env: "MINIMAX_API_KEY"
       api_key: ""
-      base_url: "https://api.minimax.io/anthropic/v1"
+      base_url: "https://api.minimax.io/anthropic"
     openai:
       api_style: "openai"
       api_key_env: "OPENAI_API_KEY"
