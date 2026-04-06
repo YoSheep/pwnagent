@@ -56,10 +56,10 @@ class PhasePlan:
     def __init__(self, raw: dict):
         self.raw = raw
         self.phase_goal: str = raw.get("phase_goal", "")
-        self.parallel_groups: list[dict] = raw.get("parallel_groups", [])
-        self.sequential_steps: list[dict] = raw.get("sequential_steps", [])
-        self.skip_conditions: list[str] = raw.get("skip_conditions", [])
-        self.risk_notes: list[str] = raw.get("risk_notes", [])
+        self.parallel_groups: list[dict] = self._normalize_parallel_groups(raw.get("parallel_groups", []))
+        self.sequential_steps: list[dict] = self._normalize_sequential_steps(raw.get("sequential_steps", []))
+        self.skip_conditions: list[str] = self._normalize_string_list(raw.get("skip_conditions", []))
+        self.risk_notes: list[str] = self._normalize_string_list(raw.get("risk_notes", []))
 
     def get_parallel_tool_calls(self, group_index: int = 0) -> list[dict]:
         if group_index >= len(self.parallel_groups):
@@ -97,6 +97,91 @@ class PhasePlan:
                 risk_branch.add(f"[red]• {note}[/red]")
 
         console.print(Panel(tree, title="[bold]执行计划[/bold]", border_style="blue"))
+
+    @staticmethod
+    def _normalize_parallel_groups(value: Any) -> list[dict]:
+        if not isinstance(value, list):
+            return []
+
+        groups: list[dict] = []
+        for group in value:
+            if not isinstance(group, dict):
+                continue
+            tools = PhasePlan._normalize_tools(group.get("tools", []))
+            groups.append({
+                "description": str(group.get("description", "") or ""),
+                "tools": tools,
+            })
+        return groups
+
+    @staticmethod
+    def _normalize_sequential_steps(value: Any) -> list[dict]:
+        if not isinstance(value, list):
+            return []
+
+        steps: list[dict] = []
+        for step in value:
+            if not isinstance(step, dict):
+                continue
+            tools = PhasePlan._normalize_tools(step.get("tools", []))
+            steps.append({
+                "description": str(step.get("description", "") or ""),
+                "depends_on": str(step.get("depends_on", "") or ""),
+                "tools": tools,
+            })
+        return steps
+
+    @staticmethod
+    def _normalize_tools(value: Any) -> list[dict]:
+        if not isinstance(value, list):
+            return []
+
+        tools: list[dict] = []
+        for tool in value:
+            normalized = PhasePlan._normalize_tool(tool)
+            if normalized:
+                tools.append(normalized)
+        return tools
+
+    @staticmethod
+    def _normalize_tool(value: Any) -> dict | None:
+        if isinstance(value, str):
+            name = value.strip()
+            return {"name": name, "args": {}, "priority": "medium", "reason": ""} if name else None
+
+        if not isinstance(value, dict):
+            return None
+
+        raw_name = (
+            value.get("name")
+            or value.get("tool")
+            or value.get("tool_name")
+            or value.get("action")
+        )
+        name = str(raw_name or "").strip()
+        if not name:
+            return None
+
+        args = value.get("args", {})
+        if not isinstance(args, dict):
+            args = {}
+
+        priority = str(value.get("priority", "medium") or "medium").lower()
+        if priority not in {"high", "medium", "low"}:
+            priority = "medium"
+
+        return {
+            "name": name,
+            "args": args,
+            "priority": priority,
+            "reason": str(value.get("reason", "") or ""),
+        }
+
+    @staticmethod
+    def _normalize_string_list(value: Any) -> list[str]:
+        if not isinstance(value, list):
+            return []
+        return [str(item) for item in value if item]
 
 
 class Planner:

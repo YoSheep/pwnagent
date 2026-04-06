@@ -152,7 +152,8 @@ export MISTRAL_API_KEY="your-mistral-key"
 
 # Then switch llm.provider in config.yaml, for example:
 # llm:
-#   provider: "minimax"
+#   provider: "minimax_cn"      # Mainland China endpoint
+#   provider: "minimax_global"  # International endpoint
 ```
 
 `config.yaml` also keeps reserved API key slots for `deepseek`, `openrouter`, `moonshot`, `dashscope`, `zhipu`, and `siliconflow`.
@@ -330,14 +331,19 @@ agent:
 
 # LLM provider
 llm:
-  provider: "anthropic"  # anthropic / minimax / openai / gemini / groq / xai / together / fireworks / mistral / ...
+  provider: "anthropic"  # anthropic / minimax_cn / minimax_global / openai / gemini / groq / xai / together / fireworks / mistral / ...
   providers:
     anthropic:
       api_style: "anthropic"
       api_key_env: "ANTHROPIC_API_KEY"
       api_key: ""
       base_url: ""
-    minimax:
+    minimax_cn:
+      api_style: "anthropic"
+      api_key_env: "MINIMAX_API_KEY"
+      api_key: ""
+      base_url: "https://api.minimaxi.com/anthropic"
+    minimax_global:
       api_style: "anthropic"
       api_key_env: "MINIMAX_API_KEY"
       api_key: ""
