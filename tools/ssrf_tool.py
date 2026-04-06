@@ -10,7 +10,7 @@ from typing import Any
 
 import httpx
 
-_UA = "Mozilla/5.0 (PwnAgent/1.0)"
+_UA = "Mozilla/5.0 (PentestPilot/1.0)"
 _TIMEOUT = 12.0
 
 # 内网地址探针（无害，仅检测响应差异）

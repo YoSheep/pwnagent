@@ -79,7 +79,7 @@ def _heuristic_sqli(target: str) -> dict[str, Any]:
 
     with httpx.Client(
         follow_redirects=True, timeout=15.0, verify=False,
-        headers={"User-Agent": "Mozilla/5.0 (PwnAgent/1.0)"},
+        headers={"User-Agent": "Mozilla/5.0 (PentestPilot/1.0)"},
     ) as client:
         # 基线响应
         try:
@@ -146,7 +146,7 @@ def _heuristic_sqli(target: str) -> dict[str, Any]:
 
 def _run_sqlmap(target: str, data: str, level: int, risk: int) -> dict[str, Any]:
     import tempfile
-    tmpdir = tempfile.mkdtemp(prefix="pwnagent_sqlmap_")
+    tmpdir = tempfile.mkdtemp(prefix="pentestpilot_sqlmap_")
     cmd = [
         "sqlmap",
         "-u", target,

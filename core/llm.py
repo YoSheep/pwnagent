@@ -108,7 +108,7 @@ def _provider_section(provider_name: str) -> dict[str, Any]:
 def get_active_provider_name(explicit: str | None = None) -> str:
     if explicit:
         return explicit
-    env_provider = os.environ.get("PWNAGENT_LLM_PROVIDER", "").strip()
+    env_provider = os.environ.get("PENTESTPILOT_LLM_PROVIDER", "").strip()
     if env_provider:
         return env_provider
     cfg = get_config()

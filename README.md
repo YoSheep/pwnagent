@@ -27,9 +27,9 @@
 
 > **WARNING: This tool is strictly for authorized penetration testing only. Using this tool against targets without explicit written authorization is illegal. Users bear full legal responsibility for any misuse.**
 
-## What is PwnAgent?
+## What is PentestPilot?
 
-PwnAgent is an AI-driven penetration testing framework with multi-provider LLM support. It uses a **ReAct (Reason + Act)** agent architecture to autonomously execute the full pentest lifecycle — from reconnaissance to exploitation to reporting. It currently supports Anthropic, MiniMax via Anthropic-compatible API, and reserves configuration for multiple OpenAI-compatible vendors including OpenAI, Gemini, Groq, xAI, Together, Fireworks, Mistral, DeepSeek, and OpenRouter-style gateways.
+PentestPilot is an AI-driven penetration testing framework with multi-provider LLM support. It uses a **ReAct (Reason + Act)** agent architecture to autonomously execute the full pentest lifecycle — from reconnaissance to exploitation to reporting. It currently supports Anthropic, MiniMax via Anthropic-compatible API, and reserves configuration for multiple OpenAI-compatible vendors including OpenAI, Gemini, Groq, xAI, Together, Fireworks, Mistral, DeepSeek, and OpenRouter-style gateways.
 
 ## Key Features
 
@@ -83,7 +83,7 @@ PwnAgent is an AI-driven penetration testing framework with multi-provider LLM s
 ## Project Structure
 
 ```
-penagent/
+pentestpilot/
 ├── main.py                 # CLI entry point (Input Router)
 ├── mcp_server.py           # MCP Server (Claude Code integration)
 ├── config.yaml             # Global configuration
@@ -212,7 +212,7 @@ python3 main.py ingest ./cve-2024-report.json
 
 ## MCP Server (Claude Code Integration)
 
-PwnAgent provides an MCP Server that exposes all security testing tools directly to Claude Code.
+PentestPilot provides an MCP Server that exposes all security testing tools directly to Claude Code.
 
 ### Configuration
 
@@ -221,9 +221,9 @@ Add to `~/.claude/settings.json`:
 ```json
 {
   "mcpServers": {
-    "pwnagent": {
+    "pentestpilot": {
       "command": "python3",
-      "args": ["/path/to/penagent/mcp_server.py"]
+      "args": ["/path/to/pentestpilot/mcp_server.py"]
     }
   }
 }
@@ -276,7 +276,7 @@ Once configured, these tools are available directly in Claude Code:
 
 ## Custom Plugins
 
-Create a Python file in any directory, and PwnAgent will auto-discover and register it:
+Create a Python file in any directory, and PentestPilot will auto-discover and register it:
 
 ```python
 # my_plugins/custom_scanner.py
@@ -303,7 +303,7 @@ Interactive mode is enabled by default. The agent pauses for user confirmation b
 
 ### Responsibility Boundary
 
-PwnAgent no longer enforces built-in scope or rate-limit checks. If you need authorization boundaries, safe-target allowlists, or execution throttling, you must implement them externally in your own workflow, wrapper, proxy, or deployment environment.
+PentestPilot no longer enforces built-in scope or rate-limit checks. If you need authorization boundaries, safe-target allowlists, or execution throttling, you must implement them externally in your own workflow, wrapper, proxy, or deployment environment.
 
 ## Configuration
 

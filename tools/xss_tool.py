@@ -47,7 +47,7 @@ def xss_scan(target: str, params: list[str] | None = None) -> dict[str, Any]:
         follow_redirects=True,
         timeout=15.0,
         verify=False,
-        headers={"User-Agent": "Mozilla/5.0 (PwnAgent/1.0)"},
+        headers={"User-Agent": "Mozilla/5.0 (PentestPilot/1.0)"},
     ) as client:
         for param in all_params:
             for probe in _REFLECTION_PROBES:

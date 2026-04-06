@@ -14,7 +14,7 @@ from jinja2 import Environment, BaseLoader
 # ------------------------------------------------------------------
 
 _MD_TEMPLATE = """\
-# PwnAgent 渗透测试报告
+# PentestPilot 渗透测试报告
 
 **生成时间**: {{ now }}
 **测试目标**: {{ target }}
@@ -98,7 +98,7 @@ _HTML_TEMPLATE = """\
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>{{ title }} — PwnAgent 报告</title>
+<title>{{ title }} — PentestPilot 报告</title>
 <style>
   :root { --critical: #dc3545; --high: #fd7e14; --medium: #ffc107; --low: #28a745; --info: #6c757d; }
   body { font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; background: #f8f9fa; color: #212529; }
@@ -221,7 +221,7 @@ def generate_report(
     session,
     output_dir: str = "./reports",
     title: str = "渗透测试报告",
-    tester: str = "PwnAgent",
+    tester: str = "PentestPilot",
 ) -> dict[str, str]:
     """生成 Markdown 和 HTML 报告，返回文件路径字典。"""
     Path(output_dir).mkdir(parents=True, exist_ok=True)
@@ -248,7 +248,7 @@ def generate_report_from_db(
     mem,
     output_dir: str = "./reports",
 ) -> dict[str, str]:
-    """从数据库数据重建报告（用于 `pwn report` 命令）。"""
+    """从数据库数据重建报告（用于 `pentestpilot report` 命令）。"""
     from core.state_machine import Finding, PentestSession
 
     scope = json.loads(session_data.get("scope", "[]"))

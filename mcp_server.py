@@ -1,5 +1,5 @@
 """
-PwnAgent MCP Server
+PentestPilot MCP Server
 将所有安全测试工具暴露为 MCP tools，供 Claude Code 及其他 MCP 客户端直接调用。
 
 启动方式（stdio，适用于 Claude Code）:
@@ -8,9 +8,9 @@ PwnAgent MCP Server
 Claude Code 配置（~/.claude/settings.json）:
   {
     "mcpServers": {
-      "pwnagent": {
+      "pentestpilot": {
         "command": "python3",
-        "args": ["/path/to/penagent/mcp_server.py"]
+        "args": ["/path/to/pentestpilot/mcp_server.py"]
       }
     }
   }
@@ -25,9 +25,9 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from mcp.server.fastmcp import FastMCP
 
 mcp = FastMCP(
-    name="pwnagent",
+    name="pentestpilot",
     instructions=(
-        "PwnAgent 安全测试工具集。\n"
+        "PentestPilot 安全测试工具集。\n"
         "包含端口扫描、Web 探测、漏洞扫描、1-day CVE 检测、"
         "XSS/SQLi/SSRF 检测、子域名枚举、目录爆破、JWT 分析等工具。\n"
         "所有工具默认直接执行，请仅在合法授权场景中使用。"
@@ -266,7 +266,7 @@ def python_port_scan(target: str, ports: str = "top1000") -> dict:
 def generate_report(
     target: str,
     title: str = "渗透测试报告",
-    tester: str = "PwnAgent",
+    tester: str = "PentestPilot",
     output_dir: str = "./reports",
 ) -> dict:
     """
@@ -306,9 +306,9 @@ def generate_report(
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(description="PwnAgent MCP Server")
+    parser = argparse.ArgumentParser(description="PentestPilot MCP Server")
     parser.add_argument("--transport", choices=["stdio", "sse"], default="stdio")
     args = parser.parse_args()
 
-    print("[PwnAgent MCP] 启动，未启用授权检查", file=sys.stderr)
+    print("[PentestPilot MCP] 启动，未启用授权检查", file=sys.stderr)
     mcp.run(transport=args.transport)

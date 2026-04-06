@@ -1,4 +1,4 @@
-# PwnAgent 配置文件
+# PentestPilot 配置文件
 #
 # 密钥建议优先写到仓库根目录的 .env（该文件已被 .gitignore 忽略），
 # 也可以直接填在下方各 provider 的 api_key 字段里。
@@ -165,7 +165,7 @@ llm:
       base_url: ""         # 预留：按 OpenRouter 官方 API Base URL 填写
       default_headers:
         HTTP-Referer: ""   # 可选：填写你的站点/仓库地址
-        X-Title: "PwnAgent"
+        X-Title: "PentestPilot"
       models:
         brain: ""
         planner: ""

@@ -13,7 +13,7 @@ from typing import Any
 import httpx
 
 TIMEOUT = 10.0
-UA = "Mozilla/5.0 (PwnAgent/1.0)"
+UA = "Mozilla/5.0 (PentestPilot/1.0)"
 
 
 @dataclass

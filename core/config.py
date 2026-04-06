@@ -33,7 +33,7 @@ def load_config(config_path: str | Path | None = None) -> dict[str, Any]:
     """加载 YAML 配置文件。缺失时返回空配置。"""
     _load_dotenv_if_present()
 
-    raw_path = config_path or os.environ.get("PWNAGENT_CONFIG") or DEFAULT_CONFIG_PATH
+    raw_path = config_path or os.environ.get("PENTESTPILOT_CONFIG") or DEFAULT_CONFIG_PATH
     path = Path(raw_path)
     if not path.exists():
         return {}
