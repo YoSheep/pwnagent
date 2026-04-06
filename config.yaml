@@ -1,0 +1,44 @@
+# PwnAgent 配置文件
+
+# 工具路径（留空则自动检测 PATH）
+tools:
+  nmap: ""       # 留空自动检测，或填绝对路径如 /usr/bin/nmap
+  httpx: ""      # projectdiscovery/httpx 二进制路径
+  nuclei: ""     # nuclei 二进制路径
+  sqlmap: ""     # sqlmap 路径
+
+# 速率限制（每秒每工具最大请求数）
+rate_limits:
+  default: 10
+  nmap_scan: 1
+  nuclei_scan: 50
+  httpx_probe: 20
+  xss_scan: 5
+  sqli_scan: 3
+
+# 默认授权范围（运行时可通过 --scope 覆盖）
+# 生产环境：务必在此处配置实际授权范围！
+scope: []
+
+# Agent 行为
+agent:
+  max_steps: 50
+  model: "claude-opus-4-5"
+  interactive: true
+  verbose: false
+
+# 报告
+report:
+  output_dir: "./reports"
+  formats:
+    - markdown
+    - html
+
+# 知识库
+knowledge:
+  db_path: "./knowledge/db"
+  auto_ingest_owasp: true   # 首次运行自动导入 OWASP Top 10
+
+# 数据库
+database:
+  path: "./db/sessions.db"

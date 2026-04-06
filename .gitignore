@@ -1,0 +1,46 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Database
+db/*.db
+db/*.db-wal
+db/*.db-shm
+
+# Knowledge base (ChromaDB)
+knowledge/db/
+
+# Reports (generated)
+reports/*.md
+reports/*.html
+
+# Environment & secrets
+.env
+.env.*
+credentials.json
+*.key
+*.pem
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Claude
+.claude/
