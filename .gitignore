@@ -35,6 +35,7 @@ reports/*.html
 third_party/sqlmap/
 third_party/sqlmap_embedded/
 third_party/sqlmapproject-sqlmap-c310c69/
+third_party/dirsearch/
 
 # Environment & secrets
 .env

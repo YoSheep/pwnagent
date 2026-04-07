@@ -101,6 +101,7 @@ class ToolRegistry:
         extra_exports = {
             "jwt_tool": [("extract_jwt_from_response", "analysis")],
             "web_workflow_tool": [("login_form", "exploit"), ("upload_file", "exploit")],
+            "dirbust_tool": [("dirsearch_init", "recon")],
         }
 
         for module_name, (func_name, category) in builtin_map.items():
