@@ -46,7 +46,7 @@ PentestPilot is an AI-driven penetration testing framework with multi-provider L
 | SQLMap Runtime / Direct Operations | `sqlmap_init`, `sqlmap_scan_url`, `sqlmap_enumerate_databases`, `sqlmap_enumerate_tables`, `sqlmap_enumerate_columns`, `sqlmap_dump_table`, `sqlmap_get_banner`, `sqlmap_get_current_user`, `sqlmap_get_current_db`, `sqlmap_read_file`, `sqlmap_execute_command` |
 | Reporting / Session Artifacts | `generate_report`, `sessions`, `report` |
 
-### Moved to near-term roadmap (still being hardened)
+### Near-term roadmap
 
 - `page_intel`
 - `http_request`, `login_form`, `upload_file`
