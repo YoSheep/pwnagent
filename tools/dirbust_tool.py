@@ -9,6 +9,8 @@ from typing import Any
 
 import httpx
 
+from tools.web_utils import normalize_int_list, normalize_string_list
+
 _UA = "Mozilla/5.0 (PentestPilot/1.0)"
 
 # 精选路径字典（按类别组织）
@@ -113,6 +115,7 @@ async def _async_dirbust(
     base_url: str,
     paths: list[str],
     interesting_codes: set[int],
+    headers: dict[str, str] | None = None,
     concurrency: int = 30,
 ) -> list[dict]:
     sem = asyncio.Semaphore(concurrency)
@@ -121,7 +124,7 @@ async def _async_dirbust(
     async with httpx.AsyncClient(
         follow_redirects=False,
         verify=False,
-        headers={"User-Agent": _UA},
+        headers={"User-Agent": _UA, **(headers or {})},
         timeout=10.0,
     ) as client:
         async def bounded_probe(path):
@@ -136,9 +139,10 @@ async def _async_dirbust(
 
 def dirbust(
     target: str,
-    categories: list[str] | None = None,
-    extra_paths: list[str] | None = None,
-    interesting_codes: list[int] | None = None,
+    categories: list[str] | str | None = None,
+    extra_paths: list[str] | str | None = None,
+    interesting_codes: list[int] | str | None = None,
+    headers: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     """
     目录/文件爆破。
@@ -148,30 +152,39 @@ def dirbust(
     :param extra_paths:      额外自定义路径列表
     :param interesting_codes: 感兴趣的 HTTP 状态码，默认 [200,204,301,302,401,403,500]
     """
-    codes = set(interesting_codes or [200, 204, 301, 302, 401, 403, 500])
+    codes = set(normalize_int_list(interesting_codes) or [200, 204, 301, 302, 401, 403, 500])
+    normalized_categories = normalize_string_list(categories)
+    normalized_extra_paths = normalize_string_list(extra_paths)
 
     # 构建路径列表
-    if categories:
+    if normalized_categories:
         paths = []
-        for cat in categories:
+        for cat in normalized_categories:
             paths.extend(_WORDLIST.get(cat, []))
     else:
         paths = list(_ALL_PATHS)
 
-    if extra_paths:
-        paths.extend(extra_paths)
+    if normalized_extra_paths:
+        paths.extend(normalized_extra_paths)
 
     # 去重
     paths = list(dict.fromkeys(paths))
 
     # 运行
     from tools.pure import run_async
-    findings = run_async(_async_dirbust(target, paths, codes))
+    findings = run_async(_async_dirbust(target, paths, codes, headers=headers))
 
     # 分类结果
     high_interest = [f for f in findings if f["status"] in (200, 204)]
     auth_protected = [f for f in findings if f["status"] in (401, 403)]
     redirects = [f for f in findings if f["status"] in (301, 302)]
+    admin_panels = [f for f in high_interest if "/admin" in f.get("path", "").lower()]
+    login_pages = [f for f in high_interest if "login" in f.get("path", "").lower()]
+    upload_paths = [f for f in high_interest if "upload" in f.get("path", "").lower()]
+    sensitive_exposures = [
+        f for f in high_interest
+        if any(marker in f.get("path", "").lower() for marker in (".env", ".git", "backup", ".sql", "config"))
+    ]
 
     return {
         "target": target,
@@ -180,6 +193,10 @@ def dirbust(
         "high_interest": high_interest,  # 直接可访问
         "auth_protected": auth_protected,  # 需认证
         "redirects": redirects,
+        "admin_panels": admin_panels,
+        "login_pages": login_pages,
+        "upload_paths": upload_paths,
+        "sensitive_exposures": sensitive_exposures,
         "total": len(findings),
     }
 
@@ -188,4 +205,3 @@ def _extract_title(html: str) -> str:
     import re
     m = re.search(r"<title[^>]*>(.*?)</title>", html, re.IGNORECASE | re.DOTALL)
     return m.group(1).strip()[:100] if m else ""
-

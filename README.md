@@ -24,6 +24,36 @@
 
 PentestPilot is an AI-driven penetration testing framework with multi-provider LLM support. It uses a **ReAct (Reason + Act)** agent architecture to autonomously execute the full pentest lifecycle — from reconnaissance to exploitation to reporting. It currently supports Anthropic, MiniMax via Anthropic-compatible API, and reserves configuration for multiple OpenAI-compatible vendors including OpenAI, Gemini, Groq, xAI, Together, Fireworks, Mistral, DeepSeek, and OpenRouter-style gateways.
 
+## Development Status (April 2026)
+
+> PentestPilot is still under active development. It is usable for authorized labs / internal testing, but it is not yet a fully stable “one-click solve everything” product.
+
+### Implemented Modules (currently usable)
+
+| Module Area | Status | Current Capability |
+|-------------|--------|--------------------|
+| `core/llm.py` + `config.yaml` | Implemented | Multi-provider runtime (Anthropic / MiniMax CN / MiniMax Global / OpenAI-compatible endpoints) |
+| `core/agent.py` + `core/planner.py` | Implemented | ReAct loop, phase planning/replanning, tool dispatch, failure retry |
+| `core/state_machine.py` + `core/memory.py` | Implemented | Session lifecycle, findings persistence, SQLite long-term memory |
+| `knowledge/ingest.py` + `knowledge/retriever.py` | Implemented | OWASP seed ingestion + ChromaDB retrieval-augmented context |
+| `modules/reporter.py` | Implemented | Markdown + HTML report generation from live or persisted sessions |
+
+### Implemented Tools (currently usable)
+
+| Category | Tools |
+|----------|-------|
+| Recon | `nmap_scan`, `httpx_probe`, `page_intel`, `dirbust`, `subdomain_enum`, `python_port_scan` |
+| Web / Vuln Scan | `nuclei_scan`, `onedaypoc_scan`, `xss_scan`, `ssrf_scan`, `python_vuln_check` |
+| SQLi / Data Extraction | `sqli_scan`, `sqlmap_init`, `sqlmap_scan_url`, `sqlmap_enumerate_databases`, `sqlmap_enumerate_tables`, `sqlmap_enumerate_columns`, `sqlmap_dump_table`, `sqlmap_get_banner`, `sqlmap_get_current_user`, `sqlmap_get_current_db`, `sqlmap_read_file`, `sqlmap_execute_command` |
+| Workflow / Exploit Support | `http_request`, `login_form`, `upload_file`, `jwt_analyze`, `extract_jwt_from_response`, `hash_crack` |
+| Reporting | `generate_report` |
+
+### Known Gaps (being improved)
+
+- Planner convergence can still drift on some CTF/lab targets and over-call generic scans.
+- High-risk confirmation prompts may still appear repeatedly in some exploit paths.
+- Browser-assisted verification depends on optional environment/tooling and may be unavailable in some setups.
+
 ## Key Features
 
 - **Multi-Provider LLM Layer** — Brain / Planner / Ask / Exploit / Post-Exploit all use a unified provider config, so you can switch between Anthropic, MiniMax, and other compatible vendors in `config.yaml`
@@ -246,6 +276,12 @@ Once configured, these tools are available directly in Claude Code:
 | `nuclei_scan` | Vulnerability scanning |
 | `xss_scan` | XSS detection |
 | `sqli_scan` | SQL injection detection |
+| `sqlmap_init` | Initialize/update sqlmap runtime |
+| `sqlmap_scan_url` | SQLMap URL scan (MCP style) |
+| `sqlmap_enumerate_databases` | SQLMap database enumeration |
+| `sqlmap_enumerate_tables` | SQLMap table enumeration |
+| `sqlmap_enumerate_columns` | SQLMap column enumeration |
+| `sqlmap_dump_table` | SQLMap table dump |
 | `ssrf_scan` | SSRF detection |
 | `subdomain_enum` | Subdomain enumeration |
 | `dirbust` | Directory bruteforce |
@@ -264,7 +300,7 @@ Once configured, these tools are available directly in Claude Code:
 | nmap | Port scanning | Auto-fallback to `python_port_scan` (async TCP connect) |
 | nuclei | Vulnerability scanning | Auto-fallback to `python_vuln_check` (rule matching) |
 | httpx (Go) | Web probing | Auto-fallback to Python `httpx` library |
-| sqlmap | SQL injection | Basic detection still works, deep scan unavailable |
+| sqlmap | SQL injection | Auto clone/pull to `third_party/sqlmap` when enabled |
 | Playwright | DOM XSS | DOM XSS skipped, reflected XSS still works |
 
 ### Pure Python Tools (Zero Dependencies)
@@ -316,12 +352,17 @@ PentestPilot no longer enforces built-in scope or rate-limit checks. If you need
 Edit `config.yaml`:
 
 ```yaml
-# Tool paths (leave empty for auto-detection via PATH)
+# Tool paths
 tools:
   nmap: ""
   httpx: ""
   nuclei: ""
-  sqlmap: ""
+  sqlmap: "./third_party/sqlmap/sqlmap.py"
+  sqlmap_auto_init: true
+  sqlmap_repo: "https://github.com/sqlmapproject/sqlmap.git"
+  sqlmap_ref: ""
+  sqlmap_local_dir: "./third_party/sqlmap"
+  sqlmap_auto_update_interval_hours: 24
 
 # Agent behavior
 agent:

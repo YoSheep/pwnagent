@@ -31,6 +31,11 @@ knowledge/db/
 reports/*.md
 reports/*.html
 
+# Auto-managed third-party runtimes
+third_party/sqlmap/
+third_party/sqlmap_embedded/
+third_party/sqlmapproject-sqlmap-c310c69/
+
 # Environment & secrets
 .env
 .env.*

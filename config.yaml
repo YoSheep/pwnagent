@@ -25,7 +25,12 @@ tools:
   nmap: ""       # 留空自动检测，或填绝对路径如 /usr/bin/nmap
   httpx: ""      # projectdiscovery/httpx 二进制路径
   nuclei: ""     # nuclei 二进制路径
-  sqlmap: ""     # sqlmap 路径
+  sqlmap: "./third_party/sqlmap/sqlmap.py"     # sqlmap 路径（可填 sqlmap.py / 二进制 / zip）
+  sqlmap_auto_init: true                        # Agent 启动时自动初始化 sqlmap（clone/pull）
+  sqlmap_repo: "https://github.com/sqlmapproject/sqlmap.git"
+  sqlmap_ref: ""                                # 可选：指定分支/标签/commit；留空表示默认分支
+  sqlmap_local_dir: "./third_party/sqlmap"      # 自动拉取到本地的目录
+  sqlmap_auto_update_interval_hours: 24         # 自动更新最小间隔（小时）
 
 # Agent 行为
 agent:
