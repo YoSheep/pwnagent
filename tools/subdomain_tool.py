@@ -8,6 +8,7 @@ import asyncio
 import json
 import socket
 from typing import Any
+from urllib.parse import urlparse
 
 import httpx
 
@@ -100,6 +101,12 @@ def subdomain_enum(
     :param use_crtsh: 是否查询 crt.sh（需要访问外网）
     :param wordlist:  自定义字典（可选，默认使用内置字典）
     """
+    if "://" in domain:
+        parsed = urlparse(domain)
+        domain = parsed.hostname or domain
+    else:
+        domain = domain.split("/")[0].split(":")[0]
+
     wl = wordlist or _WORDLIST
     results: dict[str, dict] = {}
 
@@ -154,4 +161,3 @@ def _extract_title(html: str) -> str:
     import re
     m = re.search(r"<title[^>]*>(.*?)</title>", html, re.IGNORECASE | re.DOTALL)
     return m.group(1).strip()[:100] if m else ""
-

@@ -59,6 +59,7 @@ def scan(
     target: str = typer.Argument(..., help="目标 URL 或 IP"),
     scope: str = typer.Option("", "--scope", "-s",
                               help="可选：在 session / report 中记录测试范围，逗号分隔"),
+    objective: str = typer.Option("", "--objective", help="可选：告诉 agent 当前 exploit chain 或测试目标"),
     output: str = typer.Option("./reports", "--output", "-o", help="报告输出目录"),
     interactive: bool = typer.Option(True, "--interactive/--no-interactive",
                                      help="交互模式：高风险操作前暂停确认"),
@@ -82,11 +83,11 @@ def scan(
 
     Path(output).mkdir(parents=True, exist_ok=True)
 
-    _run_agent(target, scope_list, output, interactive, verbose, planner, plugins)
+    _run_agent(target, scope_list, objective, output, interactive, verbose, planner, plugins)
 
 
 def _run_agent(
-    target: str, scope: list[str], output_dir: str,
+    target: str, scope: list[str], objective: str, output_dir: str,
     interactive: bool, verbose: bool, use_planner: bool,
     plugins: str | None,
 ):
@@ -98,7 +99,7 @@ def _run_agent(
     registry = _build_registry(plugins)
 
     # 注册 generate_report（需要 session 和 output_dir，延迟绑定）
-    session = PentestSession(target=target, scope=scope)
+    session = PentestSession(target=target, scope=scope, objective=objective)
 
     registry.register(
         "generate_report",

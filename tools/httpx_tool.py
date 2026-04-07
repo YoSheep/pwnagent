@@ -10,16 +10,25 @@ from typing import Any
 
 import httpx as _httpx
 
+from tools.web_utils import normalize_string_list, summarize_http_response
 
-def httpx_probe(target: str, paths: list[str] | None = None) -> dict[str, Any]:
+
+def httpx_probe(
+    target: str,
+    paths: list[str] | str | None = None,
+    headers: dict[str, str] | None = None,
+    capture_body: bool = False,
+    max_body_chars: int = 1200,
+) -> dict[str, Any]:
     """
     探测 Web 服务基本信息。
     优先使用 Go httpx 二进制（projectdiscovery/httpx），
     若不存在则降级为 Python httpx 探测。
     """
-    if shutil.which("httpx"):
-        return _probe_with_binary(target, paths or [])
-    return _probe_with_python(target, paths or [])
+    normalized_paths = normalize_string_list(paths)
+    if shutil.which("httpx") and not headers and not capture_body:
+        return _probe_with_binary(target, normalized_paths)
+    return _probe_with_python(target, normalized_paths, headers=headers, capture_body=capture_body, max_body_chars=max_body_chars)
 
 
 # ------------------------------------------------------------------
@@ -63,37 +72,36 @@ def _probe_with_binary(target: str, paths: list) -> dict[str, Any]:
 # Python httpx fallback
 # ------------------------------------------------------------------
 
-def _probe_with_python(target: str, paths: list) -> dict[str, Any]:
+def _probe_with_python(
+    target: str,
+    paths: list[str],
+    headers: dict[str, str] | None = None,
+    capture_body: bool = False,
+    max_body_chars: int = 1200,
+) -> dict[str, Any]:
     urls = [target] + [f"{target.rstrip('/')}/{p.lstrip('/')}" for p in paths]
     results = []
+    merged_headers = {"User-Agent": "Mozilla/5.0 (PentestPilot/1.0)"}
+    if headers:
+        merged_headers.update(headers)
 
     with _httpx.Client(
         follow_redirects=True,
         timeout=15.0,
         verify=False,
-        headers={"User-Agent": "Mozilla/5.0 (PentestPilot/1.0)"},
+        headers=merged_headers,
     ) as client:
         for url in urls:
             try:
                 resp = client.get(url)
-                title = _extract_title(resp.text)
-                results.append({
-                    "url": str(resp.url),
-                    "status_code": resp.status_code,
-                    "title": title,
-                    "content_length": len(resp.content),
-                    "server": resp.headers.get("server", ""),
-                    "x_powered_by": resp.headers.get("x-powered-by", ""),
-                    "content_type": resp.headers.get("content-type", ""),
-                    "redirect_chain": [str(r.url) for r in resp.history],
-                })
+                results.append(
+                    summarize_http_response(
+                        resp,
+                        include_body=capture_body,
+                        max_body_chars=max_body_chars,
+                    )
+                )
             except Exception as e:
                 results.append({"url": url, "error": str(e)})
 
     return {"results": results, "tool": "python-httpx"}
-
-
-def _extract_title(html: str) -> str:
-    import re
-    m = re.search(r"<title[^>]*>(.*?)</title>", html, re.IGNORECASE | re.DOTALL)
-    return m.group(1).strip()[:200] if m else ""

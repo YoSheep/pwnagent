@@ -24,6 +24,36 @@
 
 PentestPilot 是一个支持多 LLM Provider 的 AI 驱动渗透测试框架。采用 **ReAct（Reason + Act）** 智能体架构，能够自主执行从信息收集到漏洞利用的完整渗透测试流程。当前支持 Anthropic 官方接口、MiniMax 的 Anthropic 兼容接口，并为多种 OpenAI-compatible 厂商预留了配置入口，包括 OpenAI、Gemini、Groq、xAI、Together、Fireworks、Mistral，以及 DeepSeek、OpenRouter 一类兼容网关。
 
+## 开发状态（2026 年 4 月）
+
+> PentestPilot 目前仍处于持续开发阶段。已经可以用于授权靶场/内部测试，但还不是“全场景一键稳定打通”的最终产品。
+
+### 已完善模块（当前可用）
+
+| 模块区域 | 状态 | 当前能力 |
+|----------|------|----------|
+| `core/llm.py` + `config.yaml` | 已实现 | 多 Provider 运行时（Anthropic / MiniMax 中国区 / MiniMax 国际区 / OpenAI-compatible） |
+| `core/agent.py` + `core/planner.py` | 已实现 | ReAct 主循环、阶段规划/重规划、工具调度、失败重试 |
+| `core/state_machine.py` + `core/memory.py` | 已实现 | Session 生命周期、漏洞发现持久化、SQLite 长期记忆 |
+| `knowledge/ingest.py` + `knowledge/retriever.py` | 已实现 | OWASP seed 导入 + ChromaDB RAG 检索 |
+| `modules/reporter.py` | 已实现 | 基于实时/历史 session 的 Markdown + HTML 报告生成 |
+
+### 已完善工具（当前可用）
+
+| 类别 | 工具 |
+|------|------|
+| 信息收集 | `nmap_scan`, `httpx_probe`, `page_intel`, `dirbust`, `subdomain_enum`, `python_port_scan` |
+| Web/漏洞扫描 | `nuclei_scan`, `onedaypoc_scan`, `xss_scan`, `ssrf_scan`, `python_vuln_check` |
+| SQL 注入与数据利用 | `sqli_scan`, `sqlmap_init`, `sqlmap_scan_url`, `sqlmap_enumerate_databases`, `sqlmap_enumerate_tables`, `sqlmap_enumerate_columns`, `sqlmap_dump_table`, `sqlmap_get_banner`, `sqlmap_get_current_user`, `sqlmap_get_current_db`, `sqlmap_read_file`, `sqlmap_execute_command` |
+| Workflow / 利用辅助 | `http_request`, `login_form`, `upload_file`, `jwt_analyze`, `extract_jwt_from_response`, `hash_crack` |
+| 报告 | `generate_report` |
+
+### 已知短板（持续优化中）
+
+- 在部分 CTF/靶场目标上，规划器仍可能发散并过度调用通用扫描工具。
+- 在某些利用链里，高风险确认弹窗仍可能重复出现。
+- 浏览器辅助验证依赖可选环境与工具，部分环境下会不可用。
+
 ## 核心特性
 
 - **多 Provider LLM 抽象层** — Brain / Planner / Ask / Exploit / Post-Exploit 统一走 provider 配置，可在 `config.yaml` 中切换 Anthropic、MiniMax 和其他兼容厂商
@@ -246,6 +276,12 @@ PentestPilot 提供 MCP Server，可将所有安全测试工具直接暴露给 C
 | `nuclei_scan` | 漏洞扫描 |
 | `xss_scan` | XSS 检测 |
 | `sqli_scan` | SQL 注入检测 |
+| `sqlmap_init` | 初始化/更新 sqlmap 运行时 |
+| `sqlmap_scan_url` | SQLMap URL 扫描（MCP 风格） |
+| `sqlmap_enumerate_databases` | SQLMap 枚举数据库 |
+| `sqlmap_enumerate_tables` | SQLMap 枚举数据表 |
+| `sqlmap_enumerate_columns` | SQLMap 枚举字段 |
+| `sqlmap_dump_table` | SQLMap 导出表数据 |
 | `ssrf_scan` | SSRF 检测 |
 | `subdomain_enum` | 子域名枚举 |
 | `dirbust` | 目录爆破 |
@@ -264,7 +300,7 @@ PentestPilot 提供 MCP Server，可将所有安全测试工具直接暴露给 C
 | nmap | 端口扫描 | 自动使用 `python_port_scan`（异步 TCP 连接扫描） |
 | nuclei | 漏洞扫描 | 自动使用 `python_vuln_check`（规则匹配） |
 | httpx (Go) | Web 探测 | 自动使用 Python `httpx` 库 |
-| sqlmap | SQL 注入 | 基础检测仍可用，深度扫描不可用 |
+| sqlmap | SQL 注入 | 启用时可自动 clone/pull 到 `third_party/sqlmap` |
 | Playwright | DOM XSS | 跳过 DOM XSS 检测，反射型 XSS 仍可用 |
 
 ### 纯 Python 工具（零依赖）
@@ -314,12 +350,17 @@ PentestPilot 现在不再内置 scope 或 rate-limit 强制检查。如果你需
 编辑 `config.yaml`：
 
 ```yaml
-# 工具路径（留空自动检测 PATH）
+# 工具路径
 tools:
   nmap: ""
   httpx: ""
   nuclei: ""
-  sqlmap: ""
+  sqlmap: "./third_party/sqlmap/sqlmap.py"
+  sqlmap_auto_init: true
+  sqlmap_repo: "https://github.com/sqlmapproject/sqlmap.git"
+  sqlmap_ref: ""
+  sqlmap_local_dir: "./third_party/sqlmap"
+  sqlmap_auto_update_interval_hours: 24
 
 # Agent 行为
 agent:

@@ -10,6 +10,8 @@ from typing import Any
 
 import httpx
 
+from tools.web_utils import normalize_string_list
+
 _UA = "Mozilla/5.0 (PentestPilot/1.0)"
 _TIMEOUT = 12.0
 
@@ -40,7 +42,7 @@ _CLOUD_META_INDICATORS = [
 ]
 
 
-def ssrf_scan(target: str, params: list[str] | None = None) -> dict[str, Any]:
+def ssrf_scan(target: str, params: list[str] | str | None = None) -> dict[str, Any]:
     """
     扫描目标 URL 的 SSRF 漏洞。
     :param target: 目标 URL（可含查询参数）
@@ -52,7 +54,7 @@ def ssrf_scan(target: str, params: list[str] | None = None) -> dict[str, Any]:
 
     all_params = list(existing_params.keys())
     # 加入常见 SSRF 参数名（不在已有参数中的）
-    for p in (params or []) + _SSRF_PARAMS:
+    for p in normalize_string_list(params) + _SSRF_PARAMS:
         if p not in all_params:
             all_params.append(p)
 

@@ -256,6 +256,14 @@ def generate_report_from_db(
         target=session_data["target"],
         scope=scope,
     )
+    summary = json.loads(session_data.get("summary", "{}") or "{}")
+    if isinstance(summary, dict):
+        session.objective = summary.get("objective", "")
+        attack_surface_snapshot = summary.get("attack_surface_snapshot", {})
+        if isinstance(attack_surface_snapshot, dict):
+            session.attack_surface.update(attack_surface_snapshot)
+        if isinstance(summary.get("credentials_preview"), list):
+            session.credentials = list(summary["credentials_preview"])
     # 加载 findings
     for row in mem.get_findings(session_id):
         f = Finding(

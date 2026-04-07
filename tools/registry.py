@@ -8,8 +8,9 @@ import importlib
 import importlib.util
 import inspect
 import sys
+from types import UnionType
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any, Callable, get_args, get_origin, get_type_hints
 
 from rich.console import Console
 from rich.table import Table
@@ -83,6 +84,7 @@ class ToolRegistry:
         builtin_map = {
             "nmap_tool": ("nmap_scan", "recon"),
             "httpx_tool": ("httpx_probe", "recon"),
+            "page_intel_tool": ("page_intel", "recon"),
             "nuclei_tool": ("nuclei_scan", "scan"),
             "xss_tool": ("xss_scan", "scan"),
             "sqli_tool": ("sqli_scan", "scan"),
@@ -90,12 +92,15 @@ class ToolRegistry:
             "subdomain_tool": ("subdomain_enum", "recon"),
             "dirbust_tool": ("dirbust", "recon"),
             "jwt_tool": ("jwt_analyze", "analysis"),
+            "hash_tool": ("hash_crack", "analysis"),
+            "web_workflow_tool": ("http_request", "exploit"),
             "browser_tool": ("browser_verify", "scan"),
         }
 
         # 同一模块多个导出函数
         extra_exports = {
             "jwt_tool": [("extract_jwt_from_response", "analysis")],
+            "web_workflow_tool": [("login_form", "exploit"), ("upload_file", "exploit")],
         }
 
         for module_name, (func_name, category) in builtin_map.items():
@@ -218,6 +223,10 @@ class ToolRegistry:
     def _infer_schema(func: Callable) -> dict:
         """从函数签名自动生成 input_schema。"""
         sig = inspect.signature(func)
+        try:
+            resolved_hints = get_type_hints(func)
+        except Exception:
+            resolved_hints = {}
         properties = {}
         required = []
 
@@ -234,24 +243,8 @@ class ToolRegistry:
             if param_name in ("self", "cls"):
                 continue
 
-            annotation = param.annotation
-            json_type = "string"
-
-            # 处理 Optional 和 Union
-            origin = getattr(annotation, "__origin__", None)
-            if origin is not None:
-                args = getattr(annotation, "__args__", ())
-                # list[str] → array
-                if origin is list:
-                    json_type = "array"
-                else:
-                    # 取第一个非 None 类型
-                    for arg in args:
-                        if arg is not type(None):
-                            json_type = type_map.get(arg, "string")
-                            break
-            elif annotation != inspect.Parameter.empty:
-                json_type = type_map.get(annotation, "string")
+            annotation = resolved_hints.get(param_name, param.annotation)
+            json_type = ToolRegistry._annotation_to_json_type(annotation, type_map)
 
             prop: dict[str, Any] = {"type": json_type}
 
@@ -269,3 +262,51 @@ class ToolRegistry:
             "properties": properties,
             "required": required,
         }
+
+    @staticmethod
+    def _annotation_to_json_type(annotation: Any, type_map: dict[Any, str]) -> str:
+        if annotation == inspect.Parameter.empty:
+            return "string"
+
+        if annotation in type_map:
+            return type_map[annotation]
+
+        if annotation is Any:
+            return "string"
+
+        if isinstance(annotation, str):
+            text = annotation.strip().lower()
+            if text in {"int", "integer"}:
+                return "integer"
+            if text in {"float", "double", "number"}:
+                return "number"
+            if text in {"bool", "boolean"}:
+                return "boolean"
+            if text in {"list", "array"}:
+                return "array"
+            if text in {"dict", "object"}:
+                return "object"
+            return "string"
+
+        origin = get_origin(annotation)
+        if origin in {list, tuple, set, frozenset}:
+            return "array"
+        if origin in {dict}:
+            return "object"
+        if origin in {UnionType}:
+            args = [arg for arg in get_args(annotation) if arg is not type(None)]
+            if not args:
+                return "string"
+            return ToolRegistry._annotation_to_json_type(args[0], type_map)
+
+        if origin is not None:
+            args = [arg for arg in get_args(annotation) if arg is not type(None)]
+            if origin in {list, tuple, set, frozenset}:
+                return "array"
+            if origin in {dict}:
+                return "object"
+            if args:
+                return ToolRegistry._annotation_to_json_type(args[0], type_map)
+            return "string"
+
+        return type_map.get(annotation, "string")
