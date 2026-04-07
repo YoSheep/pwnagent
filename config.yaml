@@ -31,6 +31,12 @@ tools:
   sqlmap_ref: ""                                # 可选：指定分支/标签/commit；留空表示默认分支
   sqlmap_local_dir: "./third_party/sqlmap"      # 自动拉取到本地的目录
   sqlmap_auto_update_interval_hours: 24         # 自动更新最小间隔（小时）
+  dirsearch: "./third_party/dirsearch/dirsearch.py"   # dirsearch 路径（可填 dirsearch.py / 二进制）
+  dirsearch_auto_init: true                            # Agent 启动时自动初始化 dirsearch（clone/pull）
+  dirsearch_repo: "https://github.com/maurosoria/dirsearch.git"
+  dirsearch_ref: ""                                    # 可选：指定分支/标签/commit
+  dirsearch_local_dir: "./third_party/dirsearch"       # 自动拉取到本地的目录
+  dirsearch_auto_update_interval_hours: 24             # 自动更新最小间隔（小时）
 
 # Agent 行为
 agent:

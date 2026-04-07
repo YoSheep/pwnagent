@@ -44,18 +44,35 @@ def _check(target: str, tool_name: str):
 # ==================================================================
 
 @mcp.tool()
-def nmap_scan(target: str, ports: str = "top1000", flags: str = "-sV") -> dict:
+def nmap_scan(
+    target: str,
+    ports: str = "top1000",
+    flags: str = "-sV",
+    scan_type: str = "legacy",
+    timing: int = 3,
+    additional_flags: str = "",
+) -> dict:
     """
     端口扫描与服务识别。nmap 不可用时自动使用纯 Python 扫描器。
 
     Args:
         target: 目标 IP 或域名
         ports:  "top1000" / "1-65535" / "80,443,8080"
-        flags:  nmap 额外参数（nmap 可用时生效）
+        flags:  兼容旧参数，额外 nmap flags
+        scan_type: legacy / quick / full / version / custom
+        timing: nmap 时间模板 0-5（对应 -T0..-T5）
+        additional_flags: MCP 风格附加 flags（白名单过滤）
     """
     _check(target, "nmap_scan")
     from tools.nmap_tool import nmap_scan as _fn
-    return _fn(target=target, ports=ports, flags=flags)
+    return _fn(
+        target=target,
+        ports=ports,
+        flags=flags,
+        scan_type=scan_type,
+        timing=timing,
+        additional_flags=additional_flags,
+    )
 
 
 @mcp.tool()
@@ -136,21 +153,74 @@ def dirbust(
     categories: list[str] | None = None,
     extra_paths: list[str] | None = None,
     interesting_codes: list[int] | None = None,
+    headers: dict[str, str] | None = None,
+    engine: str = "auto",
+    threads: int = 25,
+    recursive: bool = False,
+    extensions: list[str] | None = None,
+    include_status: list[int] | None = None,
+    exclude_status: list[int] | None = None,
+    wordlist_categories: list[str] | None = None,
+    max_time: int = 0,
+    cookie: str = "",
+    user_agent: str = "",
+    proxy: str = "",
 ) -> dict:
     """
-    目录/文件爆破。内置 admin、api、sensitive、backup、logs、common 等类别路径字典。
+    目录/文件爆破。支持 `dirsearch` 与纯 Python 两种引擎。
 
     Args:
         target:           目标 URL
-        categories:       要测试的类别，None 表示全部
+        categories:       内置类别，None 表示全部
                           可选: admin / api / sensitive / backup / logs / common / auth_bypass
         extra_paths:      额外自定义路径
-        interesting_codes: 感兴趣的 HTTP 状态码，默认 [200,301,302,401,403,500]
+        interesting_codes: Python fallback 感兴趣状态码
+        headers:          自定义请求头
+        engine:           auto / dirsearch / python
+        threads:          并发数
+        recursive:        是否递归（dirsearch）
+        extensions:       dirsearch 扩展名
+        include_status:   dirsearch include-status
+        exclude_status:   dirsearch exclude-status
+        wordlist_categories: dirsearch 内置词典分类
+        max_time:         dirsearch 最大运行时长（秒）
+        cookie:           请求 Cookie
+        user_agent:       自定义 UA
+        proxy:            代理 URL
     """
     _check(target, "dirbust")
     from tools.dirbust_tool import dirbust as _fn
-    return _fn(target=target, categories=categories,
-               extra_paths=extra_paths, interesting_codes=interesting_codes)
+    return _fn(
+        target=target,
+        categories=categories,
+        extra_paths=extra_paths,
+        interesting_codes=interesting_codes,
+        headers=headers,
+        engine=engine,
+        threads=threads,
+        recursive=recursive,
+        extensions=extensions,
+        include_status=include_status,
+        exclude_status=exclude_status,
+        wordlist_categories=wordlist_categories,
+        max_time=max_time,
+        cookie=cookie,
+        user_agent=user_agent,
+        proxy=proxy,
+    )
+
+
+@mcp.tool()
+def dirsearch_init(update: bool = True, force_clone: bool = False) -> dict:
+    """
+    初始化/更新 dirsearch 运行时（自动 clone/pull）。
+
+    Args:
+        update: 是否尝试更新（受更新时间间隔限制）
+        force_clone: 目录冲突时是否强制 clone
+    """
+    from tools.dirbust_tool import dirsearch_init as _fn
+    return _fn(update=update, force_clone=force_clone)
 
 
 # ==================================================================
@@ -425,17 +495,47 @@ def sqlmap_execute_command(url: str, command: str, data: str = "", cookie: str =
 
 
 @mcp.tool()
-def ssrf_scan(target: str, params: list[str] | None = None) -> dict:
+def ssrf_scan(
+    target: str,
+    params: list[str] | str | None = None,
+    max_params: int = 20,
+    max_probes_per_param: int = 10,
+    concurrency: int = 20,
+    requests_per_second: float = 25.0,
+    timeout: float = 12.0,
+    verify_ssl: bool = False,
+    include_open_redirect: bool = True,
+    callback_url: str = "",
+) -> dict:
     """
-    SSRF 漏洞检测 + 开放重定向检测。
+    SSRF 漏洞检测 + 开放重定向检测（异步并发，带 baseline 判定）。
 
     Args:
         target: 目标 URL（可含查询参数）
         params: 额外要测试的参数名（如 ["url", "callback"]）
+        max_params: 最多测试参数数量
+        max_probes_per_param: 每参数最大 payload 数
+        concurrency: 并发请求数
+        requests_per_second: 速率限制（<=0 表示不限速）
+        timeout: 单请求超时秒数
+        verify_ssl: 是否校验证书
+        include_open_redirect: 是否附带开放重定向检测
+        callback_url: 可选 OAST/回连地址
     """
     _check(target, "ssrf_scan")
     from tools.ssrf_tool import ssrf_scan as _fn
-    return _fn(target=target, params=params)
+    return _fn(
+        target=target,
+        params=params,
+        max_params=max_params,
+        max_probes_per_param=max_probes_per_param,
+        concurrency=concurrency,
+        requests_per_second=requests_per_second,
+        timeout=timeout,
+        verify_ssl=verify_ssl,
+        include_open_redirect=include_open_redirect,
+        callback_url=callback_url,
+    )
 
 
 @mcp.tool()

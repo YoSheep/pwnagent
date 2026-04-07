@@ -38,15 +38,23 @@ PentestPilot is an AI-driven penetration testing framework with multi-provider L
 | `knowledge/ingest.py` + `knowledge/retriever.py` | Implemented | OWASP seed ingestion + ChromaDB retrieval-augmented context |
 | `modules/reporter.py` | Implemented | Markdown + HTML report generation from live or persisted sessions |
 
-### Implemented Tools (currently usable)
+### Tools with higher confidence (usable now)
 
 | Category | Tools |
 |----------|-------|
-| Recon | `nmap_scan`, `httpx_probe`, `page_intel`, `dirbust`, `subdomain_enum`, `python_port_scan` |
-| Web / Vuln Scan | `nuclei_scan`, `onedaypoc_scan`, `xss_scan`, `ssrf_scan`, `python_vuln_check` |
-| SQLi / Data Extraction | `sqli_scan`, `sqlmap_init`, `sqlmap_scan_url`, `sqlmap_enumerate_databases`, `sqlmap_enumerate_tables`, `sqlmap_enumerate_columns`, `sqlmap_dump_table`, `sqlmap_get_banner`, `sqlmap_get_current_user`, `sqlmap_get_current_db`, `sqlmap_read_file`, `sqlmap_execute_command` |
-| Workflow / Exploit Support | `http_request`, `login_form`, `upload_file`, `jwt_analyze`, `extract_jwt_from_response`, `hash_crack` |
-| Reporting | `generate_report` |
+| Recon / Surface Baseline | `nmap_scan`, `python_port_scan`, `httpx_probe`, `dirbust`, `dirsearch_init` |
+| SQLMap Runtime / Direct Operations | `sqlmap_init`, `sqlmap_scan_url`, `sqlmap_enumerate_databases`, `sqlmap_enumerate_tables`, `sqlmap_enumerate_columns`, `sqlmap_dump_table`, `sqlmap_get_banner`, `sqlmap_get_current_user`, `sqlmap_get_current_db`, `sqlmap_read_file`, `sqlmap_execute_command` |
+| Reporting / Session Artifacts | `generate_report`, `sessions`, `report` |
+
+### Moved to near-term roadmap (still being hardened)
+
+- `page_intel`
+- `http_request`, `login_form`, `upload_file`
+- `sqli_scan` (agent-level wrapper behavior and convergence)
+- `ssrf_scan` (new async engine needs wider target validation)
+- `xss_scan` (context handling and dynamic verification still tuning)
+- `nuclei_scan`, `onedaypoc_scan`, `subdomain_enum`, `python_vuln_check`
+- `jwt_analyze`, `extract_jwt_from_response`, `hash_crack`
 
 ### Known Gaps (being improved)
 
@@ -285,6 +293,7 @@ Once configured, these tools are available directly in Claude Code:
 | `ssrf_scan` | SSRF detection |
 | `subdomain_enum` | Subdomain enumeration |
 | `dirbust` | Directory bruteforce |
+| `dirsearch_init` | Initialize/update dirsearch runtime |
 | `jwt_analyze` | JWT security analysis |
 | `python_port_scan` | Pure Python port scanner |
 | `python_vuln_check` | Pure Python vuln checker |
@@ -298,6 +307,7 @@ Once configured, these tools are available directly in Claude Code:
 | Tool | Purpose | When Not Installed |
 |------|---------|-------------------|
 | nmap | Port scanning | Auto-fallback to `python_port_scan` (async TCP connect) |
+| dirsearch | Path discovery / recursion / status filtering | Auto-fallback to built-in Python `dirbust` engine |
 | nuclei | Vulnerability scanning | Auto-fallback to `python_vuln_check` (rule matching) |
 | httpx (Go) | Web probing | Auto-fallback to Python `httpx` library |
 | sqlmap | SQL injection | Auto clone/pull to `third_party/sqlmap` when enabled |
@@ -363,6 +373,12 @@ tools:
   sqlmap_ref: ""
   sqlmap_local_dir: "./third_party/sqlmap"
   sqlmap_auto_update_interval_hours: 24
+  dirsearch: "./third_party/dirsearch/dirsearch.py"
+  dirsearch_auto_init: true
+  dirsearch_repo: "https://github.com/maurosoria/dirsearch.git"
+  dirsearch_ref: ""
+  dirsearch_local_dir: "./third_party/dirsearch"
+  dirsearch_auto_update_interval_hours: 24
 
 # Agent behavior
 agent:
